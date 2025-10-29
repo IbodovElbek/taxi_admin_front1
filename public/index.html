@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Title -->
+    <title>Taxi Go Admin Panel</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- SEO Meta -->
+    <meta name="description" content="Taxi Go Admin Panel - boshqaruv tizimi" />
+    <meta name="keywords" content="Taxi Go, Admin Panel, Dashboard, Management" />
+    <meta name="author" content="Taxi Go Team" />
+
+    <!-- Open Graph (social media preview) -->
+    <meta property="og:title" content="Taxi Go Admin Panel" />
+    <meta property="og:description" content="Taxi Go uchun qulay boshqaruv paneli" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://taxigo.com" />
+    <meta property="og:image" content="/preview.png" />
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+
+    <!-- Styles -->
+    <style>
+      body {
+        margin: 0;
+        font-family: "Inter", sans-serif;
+        background: #f9fafb;
+      }
+
+      #root {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .loading-screen {
+        text-align: center;
+      }
+
+      .loading-screen img {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 1rem;
+        animation: spin 2s linear infinite;
+      }
+
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-screen h1 {
+        font-size: 1.5rem;
+        color: #1e293b;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Fallback Loading Screen -->
+      <div class="loading-screen">
+        <img src="/favicon.png" alt="Taxi Go Logo" />
+        <h1>Taxi Go Admin Panel</h1>
+      </div>
+    </div>
+
+    <!-- Vite will inject scripts here -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
