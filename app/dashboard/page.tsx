@@ -11,6 +11,7 @@ import Login from "../login/Login";
 import { api } from "../../api";
 import Swal from "sweetalert2";
 import { AdminDashboard, RegionsResponse } from "../types/types";
+import TaxiPricingAdmin from "@/components/RegionsPricing";
 
 export default function Home() {
   const [showAddDriver, setShowAddDriver] = useState(false);
@@ -349,6 +350,10 @@ export default function Home() {
             {/* Live Map Section */}
             <div className="animate-slide-up-delay">
               <TaxiGoMap />
+            </div>
+            {/* Region Pricing Section */}
+            <div className="animate-slide-up-delay">
+              <TaxiPricingAdmin/>
             </div>
 
             {/* Recent Activity and Quick Actions */}

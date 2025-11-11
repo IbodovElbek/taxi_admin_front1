@@ -38,8 +38,7 @@ import {
 } from "@ant-design/icons";
 import { api } from "../api";
 import { CreateRegionRequest } from "@/types";
-import { Coordinate, RegionCenter, RegionCentrer, Regions } from "@/app/types/types";
-import { warn } from "console";
+import { Coordinate, RegionCenter, Regions } from "@/app/types/types";
 
 
 
@@ -405,6 +404,7 @@ const GeocodeMapComponent = () => {
   const loadRegions = async () => {
     try {
       const regions = await api.getAdminRegions();
+
       const formattedPolygons: Regions[] = regions.regions.map(region => ({
         id: region.id,
         boundary_coordinates: region.boundary_coordinates,
@@ -417,6 +417,7 @@ const GeocodeMapComponent = () => {
         is_active: region.is_active,
         color: DEFAULT_POLYGON_COLOR
       }));
+      console.warn("Loaded regions:",formattedPolygons);
       setPolygons(formattedPolygons);
 
     } catch (error) {

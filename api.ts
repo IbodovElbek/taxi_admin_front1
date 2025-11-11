@@ -1,6 +1,6 @@
 // api.ts - Comprehensive API client for React application
 
-import { AdminDashboard, RegionResponse, RegionsResponse } from "./app/types/types";
+import { AdminDashboard, FareConfig, RegionPricingResponse, RegionResponse, RegionsResponse } from "./app/types/types";
 import { CreateRegionRequest, LoginRequest, LoginResponse } from "./types";
 
 const API_BASE_URL = "https://ibodov.uz/api/taxi/api/v1";
@@ -644,6 +644,13 @@ async getServiceTypes(): Promise<ServiceType[]> {
   
   return [];
 }
+async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
+  const response = await this.request<RegionPricingResponse>(`/admin/region-pricing/${region_id}`, { 
+    method: "GET" 
+  });
+  
+  return response;
+}
 
   async update_driver(
     driver_id: number,
@@ -660,6 +667,15 @@ async getServiceTypes(): Promise<ServiceType[]> {
     data: BalanceUpdateRequest
   ): Promise<BalanceResponse> {
     return await this.request(`/admin/drivers/${driverId}/balance/add`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminCreateRegionPricing(
+    data: FareConfig
+  ): Promise<BalanceResponse> {
+    return await this.request(`/admin/region-pricing`, {
       method: "POST",
       body: JSON.stringify(data),
     });

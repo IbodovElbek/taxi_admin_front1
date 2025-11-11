@@ -45,6 +45,53 @@ export interface RegionCenter  {
   latitude: number;
   longitude: number;
 }
+export type FareConfig = {
+  region_id: number;
+  service_type_id: number;
+  base_fare: number;
+  per_km_rate: number;
+  per_minute_rate: number;
+  minimum_fare: number;
+  peak_hours_multiplier: number;
+  peak_hours_start: string;
+  peak_hours_end: string;
+  peak_hours_evening_start: string;
+  peak_hours_evening_end: string;
+  night_multiplier: number;
+  weekend_multiplier: number;
+};
+
+export type RegionPricing = {
+  id: number;
+  service_type_id: number;
+  service_type_name: string;
+  base_fare: number;
+  per_km_rate: number;
+  per_minute_rate: number;
+  minimum_fare: number;
+  peak_hours_multiplier: number;
+  peak_hours_start: string;
+  peak_hours_end: string;
+  peak_hours_evening_start: string;
+  peak_hours_evening_end: string;
+  night_multiplier: number;
+  weekend_multiplier: number;
+};
+export type ServiceType = {
+  id: number;
+  name: string;
+};
+export type RegionPricingData = {
+  id: number;
+  name: string;
+  city: string;
+  country: string;
+};
+export type RegionPricingResponse = {
+  region: RegionPricingData;
+  pricings: RegionPricing[];
+  services: ServiceType[];
+};
 
 export type Coordinate = [number, number];
 
