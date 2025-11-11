@@ -15,7 +15,6 @@ export interface LoginResponse {
   };
 }
 
-// API Types and Functions
 export interface CreateRegionRequest {
   name: string;
   city: string;

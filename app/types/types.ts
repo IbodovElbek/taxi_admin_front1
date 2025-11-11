@@ -16,6 +16,55 @@ export interface LocalCartItem {
   quantity: number;
   price: number;
 }
+export interface AdminDashboard {
+  overview: {
+    total_drivers: number;
+    total_customers: number;
+    total_trips: number;
+    online_drivers: number;
+  };
+  today: {
+    trips: number;
+    completed_trips: number;
+    revenue: number;
+    commission: number;
+  };
+  last_7_days: {
+    trips: number;
+    revenue: number;
+  };
+}
+export interface RegionResponse {
+  region_id: number;
+  message: string;
+}
+
+export interface RegionCenter  {
+  country: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+}
+
+export type Coordinate = [number, number];
+
+export interface Regions {
+  id: number;
+  name: string;
+  city: string;
+  country: string;
+  boundary_coordinates: Coordinate[];
+  center_latitude: number;
+  center_longitude: number;
+  timezone: string;
+  is_active: boolean;
+  color?: string;
+}
+
+export interface RegionsResponse {
+  regions: Regions[];
+}
+
 
 // 🔥 NEW: Sync request
 export interface SyncLocalCartRequest {

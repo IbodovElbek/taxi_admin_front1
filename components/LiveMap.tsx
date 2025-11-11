@@ -38,6 +38,8 @@ import {
 } from "@ant-design/icons";
 import { api } from "../api";
 import { CreateRegionRequest } from "@/types";
+import { Coordinate, RegionCenter, RegionCentrer, Regions } from "@/app/types/types";
+import { warn } from "console";
 
 
 
@@ -371,15 +373,15 @@ const DEFAULT_POLYGON_COLOR = "#bdbebd";
 
 // Asosiy component
 const GeocodeMapComponent = () => {
-  const [polygonCoords, setPolygonCoords] = useState<CoordinatesType[]>([]);
-  const [polygonCenter, setPolygonCenter] = useState<CoordinatesType | null>(null);
+  const [polygonCoords, setPolygonCoords] = useState<Coordinate[]>([]);
+  const [polygonCenter, setPolygonCenter] = useState<RegionCenter | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [polygonName, setPolygonName] = useState("");
   const [polygonColor, setPolygonColor] = useState(DEFAULT_POLYGON_COLOR);
-  const [polygons, setPolygons] = useState<IPolygons[]>([]);
-  const [selectedPolygonId, setSelectedPolygonId] = useState<string | null>(null);
+  const [polygons, setPolygons] = useState<Regions[]>([]);
+  const [selectedPolygonId, setSelectedPolygonId] = useState<number | null>(null);
   const [markerCoords, setMarkerCoords] = useState<CoordinatesType | null>(null);
   const [address, setAddress] = useState<IAddress | null>(null);
   const [deliveryStatus, setDeliveryStatus] = useState<string>("");
@@ -402,14 +404,21 @@ const GeocodeMapComponent = () => {
 
   const loadRegions = async () => {
     try {
-      const regions = await api.getAllregions();
-      const formattedPolygons: IPolygons[] = regions.map(region => ({
+      const regions = await api.getAdminRegions();
+      const formattedPolygons: Regions[] = regions.regions.map(region => ({
         id: region.id,
-        coords: region.boundary_coordinates,
+        boundary_coordinates: region.boundary_coordinates,
         name: region.name,
+        country: region.country,
+        city: region.city,
+        center_latitude: region.center_latitude,  
+        center_longitude: region.center_longitude,
+        timezone: region.timezone,
+        is_active: region.is_active,
         color: DEFAULT_POLYGON_COLOR
       }));
       setPolygons(formattedPolygons);
+
     } catch (error) {
       console.error('Error loading regions:', error);
     }
@@ -485,7 +494,7 @@ const GeocodeMapComponent = () => {
   }
 
   // Poligon markazini hisoblash
-  const handleCalculateCenter = () => {
+  const handleCalculateCenter = async () => {
     if (polygonCoords.length < 3) {
       message.warning('Markaz hisoblash uchun kamida 3 ta nuqta kerak');
       return;
@@ -493,9 +502,52 @@ const GeocodeMapComponent = () => {
 
     const center = calculatePolygonCenter(polygonCoords);
     const centerCoords: CoordinatesType = [center.lat, center.lng];
-    setPolygonCenter(centerCoords);
+    const region_data=await getLocationName(center.lat, center.lng);
+    const region_data_str:RegionCenter = {
+      country: region_data?.country || "Noma'lum",
+      city: region_data?.city || region_data?.town || "Noma'lum",
+      latitude: center.lat || 0.0,
+      longitude: center.lng || 0.0,
+    };
+
+    console.warn("dskdjnvdkf:",region_data);
+    setPolygonCenter(region_data_str);
     message.success('Poligon markazi hisoblandi!');
   };
+interface OpenCageAddress {
+  country?: string;
+  city?: string;
+  town?: string;
+  state?: string;
+  postcode?: string;
+}
+
+const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddress | null> => {
+  try {
+    const apiKey = "bb4b843346844ce89251dea6f1c33e29";
+    const res = await fetch(
+      `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${apiKey}&language=en`
+    );
+
+    const data = await res.json();
+
+    if (data.results && data.results.length > 0) {
+      const components = data.results[0].components;
+      console.warn("response",components);
+      
+      console.log("Davlat:", components.country);
+      console.log("Shahar:", components.city || components.town);
+      return components;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Reverse geocoding xatosi:", error);
+    return null;
+  }
+};
+
+
 
   // Poligon saqlash
   const handleSaveNewPolygon = async () => {
@@ -503,13 +555,14 @@ const GeocodeMapComponent = () => {
       // API ga jo'natish
       setIsLoading(true);
       try {
+
         const regionData: CreateRegionRequest = {
           name: polygonName,
-          city: "Tashkent",
-          country: "Uzbekistan",
+          city: polygonCenter.city,
+          country:polygonCenter.country,
           boundary_coordinates: polygonCoords,
-          center_latitude: polygonCenter[0],
-          center_longitude: polygonCenter[1],
+          center_latitude: polygonCenter.latitude,
+          center_longitude: polygonCenter.longitude,
           timezone: "Asia/Tashkent"
         };
         console.warn("fhtfh",regionData);
@@ -517,10 +570,16 @@ const GeocodeMapComponent = () => {
 
         const createdRegion = await api.create_region(regionData);
         
-        const newPolygon: IPolygons = {
-          id: createdRegion.id,
-          coords: polygonCoords,
+        const newPolygon: Regions = {
+          id: createdRegion.region_id,
+          boundary_coordinates: polygonCoords,
           name: polygonName,
+          city: polygonCenter.city,
+          country: polygonCenter.country,
+          center_latitude: polygonCenter.latitude,
+          center_longitude: polygonCenter.longitude,
+          timezone: "Asia/Tashkent",
+          is_active: true,
           color: polygonColor
         };
         
@@ -534,14 +593,20 @@ const GeocodeMapComponent = () => {
       }
     } else {
       // Lokal saqlash
-      const newPolygon = {
-        id: v4(),
-        coords: polygonCoords,
-        name: polygonName,
-        color: polygonColor
-      };
+      // const newPolygon = {
+      //   id: v4(),
+      //   boundary_coordinates: polygonCoords,
+      //     name: polygonName,
+      //     city: "Tashkent",
+      //     country: "Uzbekistan",
+      //     center_latitude: 0.0,
+      //     center_longitude: 0.0,
+      //     timezone: "Asia/Tashkent",
+      //     is_active: true,
+      //     color: polygonColor
+      // };
       
-      setPolygons((prev) => [...prev, newPolygon]);
+      // setPolygons((prev) => [...prev, newPolygon]);
       message.success('Hudud lokal saqlandi');
     }
     
@@ -577,7 +642,7 @@ const GeocodeMapComponent = () => {
         poly.id === selectedPolygonId
           ? {
               ...poly,
-              coords: poly.coords.map((coord, i) =>
+              coords: poly.boundary_coordinates.map((coord, i) =>
                 i === index ? newCoords : coord
               )
             }
@@ -592,9 +657,9 @@ const GeocodeMapComponent = () => {
     let minDistance = Infinity;
     let insertIndex = -1;
 
-    for (let i = 0; i < selectedPolygon.coords.length; i++) {
-      const p1 = selectedPolygon.coords[i];
-      const p2 = selectedPolygon.coords[(i + 1) % selectedPolygon.coords.length];
+    for (let i = 0; i < selectedPolygon.boundary_coordinates.length; i++) {
+      const p1 = selectedPolygon.boundary_coordinates[i];
+      const p2 = selectedPolygon.boundary_coordinates[(i + 1) % selectedPolygon.boundary_coordinates.length];
       const distance = pointToSegmentDistance(clickCoords, p1, p2);
 
       if (distance < minDistance) {
@@ -610,9 +675,9 @@ const GeocodeMapComponent = () => {
             ? {
                 ...poly,
                 coords: [
-                  ...poly.coords.slice(0, insertIndex),
+                  ...poly.boundary_coordinates.slice(0, insertIndex),
                   clickCoords,
-                  ...poly.coords.slice(insertIndex)
+                  ...poly.boundary_coordinates.slice(insertIndex)
                 ]
               }
             : poly

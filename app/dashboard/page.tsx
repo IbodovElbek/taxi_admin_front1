@@ -10,6 +10,7 @@ import RecentActivity from "../../components/RecentActivity";
 import Login from "../login/Login";
 import { api } from "../../api";
 import Swal from "sweetalert2";
+import { AdminDashboard, RegionsResponse } from "../types/types";
 
 export default function Home() {
   const [showAddDriver, setShowAddDriver] = useState(false);
@@ -18,10 +19,14 @@ export default function Home() {
   const [showGenerateReport, setShowGenerateReport] = useState(false);
   const [showManageUsers, setShowManageUsers] = useState(false);
   const [showManagePayments, setShowManagePayments] = useState(false);
-  const [activeDrivers, setActiveDrivers] = useState(247);
-  const [totalRides, setTotalRides] = useState(1247);
-  const [ongoingRides, setOngoingRides] = useState(86);
-  const [cancelledRides, setCancelledRides] = useState(23);
+  const [activeDrivers, setActiveDrivers] = useState(0);
+  const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
+  const [regions, setRegions] = useState<RegionsResponse | null>(null);
+  const [totalRides, setTotalRides] = useState(0);
+  const [totalTodayRides, setTotalTodayRides] = useState(0);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [ongoingRides, setOngoingRides] = useState(0);
+  const [cancelledRides, setCancelledRides] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -50,7 +55,16 @@ export default function Home() {
     }
     setCheckingAuth(false);
   }, []);
-
+  const handleDashboardStatistika = async () => {
+    try {
+      const data = await api.getAdminDashboard();
+      setDashboard(data);      
+      console.warn(data);
+      
+    } catch (error) {
+      console.error("Dashboard statistika olishda xatolik:", error);
+    }
+  };
   const fetchDrivers = async () => {
     try {
       setLoading(true);
@@ -67,6 +81,16 @@ export default function Home() {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRegions = async () => {
+    try {
+      const data = await api.getAdminRegions();
+      setRegions(data);
+      console.log("Regions data:", data);
+    } catch (error) {
+      console.error("Regions olishda xatolik:", error);
     }
   };
 
@@ -132,7 +156,9 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchDrivers();
+    // fetchDrivers();
+    handleDashboardStatistika();
+    fetchRegions();
   }, []);
 
   const handleLogin = (userData: any) => {
@@ -203,6 +229,7 @@ export default function Home() {
   };
 
   const handleAddDriver = (driverData: any) => {
+
     setActiveDrivers((prev) => prev + 1);
     setShowAddDriver(false);
     // Success animation
@@ -278,7 +305,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 animate-slide-up mt-12">
               <KPICard
                 title="Faol Haydovchilar"
-                value={activeDrivers.toString()}
+                value={dashboard?.overview.online_drivers.toString() ?? '0'}
                 change="+12%"
                 changeType="increase"
                 icon="ri-taxi-line"
@@ -287,7 +314,7 @@ export default function Home() {
               />
               <KPICard
                 title="Bugungi Jami Sayohatlar"
-                value={totalRides.toLocaleString()}
+                value={dashboard?.today.trips.toLocaleString() ?? '0'}
                 change="+8%"
                 changeType="increase"
                 icon="ri-map-pin-line"

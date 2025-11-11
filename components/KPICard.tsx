@@ -3,7 +3,7 @@
 
 interface KPICardProps {
   title: string;
-  value: string;
+  value: string | null;
   change: string;
   changeType: 'increase' | 'decrease';
   icon: string;

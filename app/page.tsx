@@ -554,8 +554,8 @@ export default function Home() {
                     </div>
                     <div>
                       <p className="font-semibold mb-1">Phone</p>
-                      <p className="text-yellow/90">+1 (555) 123-4567</p>
-                      <p className="text-yellow/90">+1 (555) 987-6543</p>
+                      <p className="text-yellow/90">+998 (99) 940-07-78</p>
+                      {/* <p className="text-yellow/90">+1 (555) 987-6543</p> */}
                     </div>
                   </div>
 
@@ -565,8 +565,8 @@ export default function Home() {
                     </div>
                     <div>
                       <p className="font-semibold mb-1">Email</p>
-                      <p className="text-yellow/90">info@taxigo.com</p>
-                      <p className="text-yellow/90">support@taxigo.com</p>
+                      <p className="text-yellow/90">macibodovelbek@gmail.com</p>
+                      {/* <p className="text-yellow/90">support@taxigo.com</p> */}
                     </div>
                   </div>
 
@@ -576,8 +576,8 @@ export default function Home() {
                     </div>
                     <div>
                       <p className="font-semibold mb-1">Address</p>
-                      <p className="text-yellow/90">123 Main Street</p>
-                      <p className="text-yellow/90">City Center, Country 12345</p>
+                      <p className="text-yellow/90">Uzbekistan</p>
+                      {/* <p className="text-yellow/90">City Center, Country 12345</p> */}
                     </div>
                   </div>
 
@@ -655,16 +655,16 @@ export default function Home() {
               <ul className="space-y-3">
                 <li className="flex items-center gap-3 text-sm text-gray-400">
                   <Phone className="w-4 h-4 text-yellow-500" />
-                  <span>+1 (555) 123-4567</span>
+                  <span>+998 (99) 940-07-78</span>
                 </li>
                 <li className="flex items-center gap-3 text-sm text-gray-400">
                   <Mail className="w-4 h-4 text-yellow-500" />
-                  <span>info@taxigo.com</span>
+                  <span>macibodovelbek@gmail.com</span>
                 </li>
-                <li className="flex items-start gap-3 text-sm text-gray-400">
+                {/* <li className="flex items-start gap-3 text-sm text-gray-400">
                   <MapPin className="w-4 h-4 text-yellow-500 mt-1" />
                   <span>123 Main Street, City Center</span>
-                </li>
+                </li> */}
               </ul>
             </div>
           </div>

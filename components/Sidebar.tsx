@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 const menuItems = [
   { 
     name: 'Boshqaruv Paneli', 
-    href: '/', 
+    href: '/dashboard/', 
     icon: 'ri-dashboard-line'
   },
   // { 

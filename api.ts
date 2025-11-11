@@ -1,5 +1,6 @@
 // api.ts - Comprehensive API client for React application
 
+import { AdminDashboard, RegionResponse, RegionsResponse } from "./app/types/types";
 import { CreateRegionRequest, LoginRequest, LoginResponse } from "./types";
 
 const API_BASE_URL = "https://ibodov.uz/api/taxi/api/v1";
@@ -566,7 +567,7 @@ class ApiClient {
     
     return response;
   }
-  async create_region(data: CreateRegionRequest) {
+  async create_region(data: CreateRegionRequest):Promise<RegionResponse> {
     return await this.request("/admin/regions", {
       method: "POST",
       body: JSON.stringify(data), 
@@ -613,6 +614,18 @@ async getAllAdminTrips(params?: {
 // 🔹 Bitta tripni ID bo'yicha olish
 async getTripById(tripId: number): Promise<Trip> {
   return await this.request(`/admin/trips/${tripId}`, { 
+    method: "GET" 
+  });
+}
+
+async getAdminDashboard(): Promise<AdminDashboard> {
+  return await this.request(`/admin/dashboard`, { 
+    method: "GET" 
+  });
+}
+
+async getAdminRegions(): Promise<RegionsResponse> {
+  return await this.request(`/admin/regions`, { 
     method: "GET" 
   });
 }
