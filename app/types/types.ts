@@ -77,6 +77,48 @@ export type RegionPricing = {
   night_multiplier: number;
   weekend_multiplier: number;
 };
+export type updatefareresponse = {
+  message: string;
+  "pricing_id": number;
+};
+export interface Driver {
+  id: number;
+  service_type_id: number;
+  service_type_name?: string;
+  created_at: string;
+  updated_at: string | null;
+  user: User;
+  driver_balance: number;
+  balance_formatted: string;
+  license_number: string;
+  car_model: string;
+  car_color: string;
+  car_number: string;
+  car_year: number;
+  status: "online" | "offline" | string; 
+  rating: number;
+  total_trips: number;
+  total_earnings: number;
+  commission_rate: number;
+  is_verified: boolean;
+  documents_verified: boolean;
+  last_location_update: string | null;
+}
+
+export interface User {
+  id: number;
+  full_name: string;
+  phone_number: string;
+  email: string;
+  status: "active" | "blocked" | string;
+}
+export interface DriverResponse {
+  drivers: Driver[];
+  services: ServiceType[];
+  total: number;
+  limit: number;
+  offset: number;
+}
 export type ServiceType = {
   id: number;
   name: string;

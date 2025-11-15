@@ -5,10 +5,14 @@ import { RegionPricingResponse, Regions, ServiceType } from '@/app/types/types';
 
 export default function TaxiPricingAdmin() {
   const [regions, setRegions] = useState<Regions[]>([]);
+
+  const [serviceTypeId, setserviceTypeId] = useState<number| null>(null);
   const [selectedRegion, setSelectedRegion] = useState<Regions | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isnull, setIsnull] = useState(true);
   const [error, setError] = useState('');
+  const [response, setResponse] = useState('');
   const [regionData, setRegionData] = useState<RegionPricingResponse| null>(null); 
   const [services, setServices] = useState<ServiceType[]>([]); 
 
@@ -42,25 +46,39 @@ console.error("Failed to load regions:", error);
 }
 }
 const handleRegionSelect = async (region: Regions) => {
+  setFormData({
+    region_id: region.id,
+        service_type_id: 0,
+        base_fare: 0,
+        per_km_rate: 0,
+        per_minute_rate: 0,
+        minimum_fare: 0,
+        peak_hours_multiplier: 0,
+        peak_hours_start: "07:00",
+        peak_hours_end: "09:00",
+        peak_hours_evening_start: "17:00",
+        peak_hours_evening_end: "19:00",
+        night_multiplier: 1.2,
+        weekend_multiplier: 1.4
+  });
   setSelectedRegion(region);
   setSuccess(false);
   setError('');
   setLoading(true);
 
   try {
-    // ❌ Mock datani olib tashlang
-    // ✅ Haqiqiy API dan ma'lumot olish
     const data = await api.getAdminRegionPricings(region.id);
     
     console.log('API dan kelgan ma\'lumot:', data); // Debug uchun
     setRegionData(data);
-    setServices(data.services || []); // Services ni set qilish
+    setServices(data.services || []);
     
-    // Default holatda birinchi pricing (Economy) ni tanlash
     const defaultPricing = data.pricings && data.pricings.length > 0 
       ? data.pricings[0] 
       : null;
-    
+    if(data.pricings[0] === undefined){
+      setIsnull(true);
+    }
     if (defaultPricing) {
       setFormData({
         region_id: region.id,
@@ -77,6 +95,7 @@ const handleRegionSelect = async (region: Regions) => {
         night_multiplier: defaultPricing.night_multiplier,
         weekend_multiplier: defaultPricing.weekend_multiplier
       });
+      setIsnull(false);
     }
   } catch (err) {
     setError('Region ma\'lumotlarini yuklashda xatolik yuz berdi');
@@ -88,33 +107,35 @@ const handleRegionSelect = async (region: Regions) => {
 
 const handleServiceTypeChange = (e) => {
   const serviceTypeId = parseInt(e.target.value);
-  
+  setserviceTypeId(serviceTypeId);
+
   // Tanlangan service type uchun pricing ma'lumotlarini topish
   const selectedPricing = regionData?.services.find(p => p.id === serviceTypeId);
-  console.log('Tanlangan service type ID:', serviceTypeId);
-  console.log('scnsd:', regionData);
-const selectedPricing2 = regionData?.pricings.find(p => p.service_type_id === Number(serviceTypeId));
+  const selectedPricing2 = regionData?.pricings.find(p => p.service_type_id === Number(serviceTypeId));
 
   console.log('Tanlangan service type ID:', serviceTypeId);
   console.log('Topilgan pricing ma\'lumotlari:', selectedPricing2);
+
   if (selectedPricing) {
-    setFormData({
-      region_id:selectedRegion!.id,
-      service_type_id: serviceTypeId,
-      base_fare: selectedPricing2!.base_fare,
-      per_km_rate: selectedPricing2!.per_km_rate,
-      per_minute_rate: selectedPricing2!.per_minute_rate,
-      minimum_fare: selectedPricing2!.minimum_fare,
-      peak_hours_multiplier: selectedPricing2!.peak_hours_multiplier,
-      peak_hours_start: selectedPricing2!.peak_hours_start,
-      peak_hours_end: selectedPricing2!.peak_hours_end,
-      peak_hours_evening_start: selectedPricing2!.peak_hours_evening_start,
-      peak_hours_evening_end: selectedPricing2!.peak_hours_evening_end,
-      night_multiplier: selectedPricing2!.night_multiplier,
-      weekend_multiplier: selectedPricing2!.weekend_multiplier
-    });
+  setIsnull(selectedPricing2 === null);
+  setFormData(prev => ({
+  ...prev,
+  service_type_id: serviceTypeId,
+  base_fare: selectedPricing2?.base_fare ?? 0,
+  per_km_rate: selectedPricing2?.per_km_rate ?? 0,
+  per_minute_rate: selectedPricing2?.per_minute_rate ?? 0,
+  minimum_fare: selectedPricing2?.minimum_fare ?? 0,
+  peak_hours_multiplier: selectedPricing2?.peak_hours_multiplier ?? 1,
+  peak_hours_start: selectedPricing2?.peak_hours_start ?? "",
+  peak_hours_end: selectedPricing2?.peak_hours_end ?? "",
+  peak_hours_evening_start: selectedPricing2?.peak_hours_evening_start ?? "",
+  peak_hours_evening_end: selectedPricing2?.peak_hours_evening_end ?? "",
+  night_multiplier: selectedPricing2?.night_multiplier ?? 1,
+  weekend_multiplier: selectedPricing2?.weekend_multiplier ?? 1,
+}));
   }
 };
+
 
   const handleInputChange = (e: { target: { name: any; value: any; type: any; }; }) => {
     const { name, value, type } = e.target;
@@ -135,15 +156,38 @@ const selectedPricing2 = regionData?.pricings.find(p => p.service_type_id === Nu
       
       // Mock API call
       const response = await api.adminCreateRegionPricing(formData);
-      console.log('API javobi:', response);      
+      console.log('API javobi:', response); 
+      setResponse(response.message);     
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      setError('Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+      setError(`${err}`);
     } finally {
       setLoading(false);
     }
   };
+  const handleUpdateSubmit = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess(false);
+
+    try {
+      // Bu yerda API ga so'rov yuboriladi
+      console.log('Yuborilayotgan ma\'lumot:', formData);
+      
+      // Mock API call
+      const response = await api.adminUpdateRegionPricing(formData);
+      console.log('API javobi:', response);      
+      setResponse(response.message);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(`${err}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
 
   return (
     <div className="min-h-screen bg-white rounded-lg">
@@ -199,11 +243,10 @@ const selectedPricing2 = regionData?.pricings.find(p => p.service_type_id === Nu
                   <h2 className="text-2xl font-semibold text-gray-800 mb-6">
                     {selectedRegion.name} - Narx sozlamalari
                   </h2>
-
                   {/* Success Message */}
-                  {success && (
+                  {response && (
                     <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                      Narxlar muvaffaqiyatli saqlandi!
+                      {response }
                     </div>
                   )}
 
@@ -405,7 +448,7 @@ const selectedPricing2 = regionData?.pricings.find(p => p.service_type_id === Nu
 
                   {/* Submit Button */}
                   <button
-                    onClick={handleSubmit}
+                    onClick={isnull?handleSubmit:handleUpdateSubmit}
                     disabled={loading}
                     className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
@@ -417,8 +460,9 @@ const selectedPricing2 = regionData?.pricings.find(p => p.service_type_id === Nu
                     ) : (
                       <>
                         <Save className="mr-2" size={20} />
-                        Narxlarni saqlash
+                        {isnull ? "Narxlarni saqlash" : "Narxlarni yangilash"}
                       </>
+
                     )}
                   </button>
                 </div>

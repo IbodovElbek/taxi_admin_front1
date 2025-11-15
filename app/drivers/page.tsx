@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import TopBar from "../../components/TopBar";
-import { api, Driver, UpdateDriverRequest, BalanceUpdateRequest, BalanceResponse } from "../../api";
+import { api,  UpdateDriverRequest, BalanceUpdateRequest, BalanceResponse } from "../../api";
 import Swal from "sweetalert2";
+import { Driver, ServiceType } from "../types/types";
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -20,6 +21,8 @@ export default function DriversPage() {
   const [showEditDriver, setShowEditDriver] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [editFormData, setEditFormData] = useState<UpdateDriverRequest>({});
+  const [services, setservices] = useState <ServiceType[] | null>([]);
+  const [selectedservice, setselectedservice] = useState <ServiceType | null>(null);
 
   // NEW: Balance management state
   const [showBalanceModal, setShowBalanceModal] = useState(false);
@@ -30,6 +33,7 @@ export default function DriversPage() {
   const [balanceLoading, setBalanceLoading] = useState(false);
 
   const [formData, setFormData] = useState({
+    service_type_id:1,
     phone_number: "",
     email: "",
     full_name: "",
@@ -46,7 +50,12 @@ export default function DriversPage() {
   useEffect(() => {
     fetchDrivers();
   }, []);
-
+const handleServiceTypeChange = (e: React.ChangeEvent<HTMLSelectElement>,is_create:boolean) => {
+  const serviceTypeId = parseInt(e.target.value);
+  is_create?setFormData((prev) => ({ ...prev, service_type_id: serviceTypeId })):
+  setEditFormData((prev) => ({ ...prev, service_type_id: serviceTypeId }));
+  console.log('Tanlangan service type ID:', serviceTypeId);
+};
   const fetchDrivers = async () => {
     try {
       setLoading(true);
@@ -54,20 +63,11 @@ export default function DriversPage() {
       const response = await api.get_all_drivers();
       console.log("API Response:", response);
 
-      let driversArray = [];
-      if (Array.isArray(response)) {
-        driversArray = response;
-      } else if (response && Array.isArray(response.data)) {
-        driversArray = response.data;
-      } else if (response && Array.isArray(response.drivers)) {
+      let driversArray : Driver[];
+      setservices(response.services || null);
+      if (Array.isArray(response.drivers)) {
         driversArray = response.drivers;
-      } else if (
-        response &&
-        response.results &&
-        Array.isArray(response.results)
-      ) {
-        driversArray = response.results;
-      } else {
+      }else {
         console.warn("Unexpected API response format:", response);
         driversArray = [];
       }
@@ -83,7 +83,6 @@ export default function DriversPage() {
     }
   };
 
-  // drivers array ekanligini ta'minlash
   const safeDrivers = Array.isArray(drivers) ? drivers : [];
 
   const filteredDrivers = safeDrivers.filter((driver) => {
@@ -161,6 +160,7 @@ export default function DriversPage() {
 
       // formani tozalash
       setFormData({
+        service_type_id:1,
         phone_number: "",
         email: "",
         full_name: "",
@@ -187,10 +187,10 @@ export default function DriversPage() {
     }
   };
 
-  // Edit driver functions
   const handleEditDriver = (driver: Driver) => {
     setEditingDriver(driver);
     setEditFormData({
+      service_type_id: driver.service_type_id || 1,
       full_name: driver.user?.full_name || "",
       email: driver.user?.email || "",
       phone_number: driver.user?.phone_number || "",
@@ -1176,7 +1176,28 @@ export default function DriversPage() {
                 <h4 className="font-semibold text-gray-800 text-base lg:text-lg">
                   Transport Vositasi
                 </h4>
-
+                    <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Xizmat turi
+                    </label>
+                 <select
+                  name="service_type_id"
+                  value={editFormData.service_type_id}
+                  onChange={(e) => handleServiceTypeChange(e, false)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={!services || services.length === 0}
+                >
+                  {services && services.length > 0 ? (
+                    services.map(service => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Xizmat turlari yuklanmoqda...</option>
+                  )}
+                </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mashina modeli
@@ -1399,7 +1420,28 @@ export default function DriversPage() {
                 <h4 className="font-semibold text-gray-800 text-base lg:text-lg">
                   Transport Vositasi
                 </h4>
-
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Xizmat turi
+                    </label>
+                 <select
+                  name="service_type_id"
+                  value={formData.service_type_id}
+                  onChange={(e) => handleServiceTypeChange(e, true)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={!services || services.length === 0}
+                >
+                  {services && services.length > 0 ? (
+                    services.map(service => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Xizmat turlari yuklanmoqda...</option>
+                  )}
+                </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mashina modeli *

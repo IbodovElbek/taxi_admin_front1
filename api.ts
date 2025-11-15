@@ -1,6 +1,6 @@
 // api.ts - Comprehensive API client for React application
 
-import { AdminDashboard, FareConfig, RegionPricingResponse, RegionResponse, RegionsResponse } from "./app/types/types";
+import { AdminDashboard, DriverResponse, FareConfig, RegionPricingResponse, RegionResponse, RegionsResponse, updatefareresponse } from "./app/types/types";
 import { CreateRegionRequest, LoginRequest, LoginResponse } from "./types";
 
 const API_BASE_URL = "https://ibodov.uz/api/taxi/api/v1";
@@ -62,6 +62,7 @@ export type Customer = {
 };
 
 export type UpdateDriverRequest = {
+  service_type_id?: number;
   full_name?: string;
   email?: string;
   phone_number?: string;
@@ -147,34 +148,6 @@ export type TripsResponse = {
   per_page: number;
 };
 
-export type Driver = {
-  id: number;
-  status: string;
-  rating: number;
-  total_trips: number;
-  total_earnings: number;
-  is_verified: boolean;
-  license_number: string;
-  car_model: string;
-  car_color: string;
-  car_number: string;
-  car_year: number;
-  balance_formatted: string;
-  driver_balance: string;
-  commission_rate: number;
-  documents_verified: boolean;
-  last_location_update?: string;
-
-  // ichki user ma'lumotlari
-  user: {
-    is_verified: any;
-    id: number;
-    full_name: string;
-    phone_number: string;
-    email: string;
-    status: string;
-  };
-};
 
 export interface Review {
   id: number;
@@ -479,6 +452,9 @@ class ApiClient {
           console.error("❌ API Error Data:", errorData);
 
           // Handle FastAPI validation errors
+          if(errorData.error) {
+            errorMessage = errorData.error;
+          }
           if (errorData.detail && Array.isArray(errorData.detail)) {
             const validationErrors = errorData.detail
               .map((err: { loc: any[]; msg: any }) => {
@@ -680,6 +656,15 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
       body: JSON.stringify(data),
     });
   }
+  async adminUpdateRegionPricing(
+    data: FareConfig
+  ): Promise<updatefareresponse> {
+    return await this.request(`/admin/region-pricing`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+  
 
   // Haydovchi balancedan pul ayirish
   async deductDriverBalance(
@@ -801,7 +786,7 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
   }
 
   // 🔹 Barcha haydovchilarni olish
-  async get_all_drivers(): Promise<Driver[]> {
+  async get_all_drivers(): Promise<DriverResponse> {
     return await this.request("/admin/drivers", { method: "GET" });
   }
   async get_all_users(): Promise<Customer[]> {
