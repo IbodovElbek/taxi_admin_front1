@@ -23,6 +23,7 @@ export interface CreateRegionRequest {
   center_latitude: number;
   center_longitude: number;
   timezone: string;
+  is_active?: boolean;
 }
 
 export interface Region {

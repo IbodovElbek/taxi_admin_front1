@@ -43,6 +43,9 @@ export default function DriversPage() {
     car_color: "",
     car_number: "",
     car_year: 0,
+    documents_verified: false,
+    is_verified: false,
+    driver_balance:0,
     commission_rate: 0.2,
   });
 
@@ -170,7 +173,10 @@ const handleServiceTypeChange = (e: React.ChangeEvent<HTMLSelectElement>,is_crea
         car_color: "",
         car_number: "",
         car_year: 0,
+        driver_balance:0,
         commission_rate: 0.2,
+        documents_verified: false,
+        is_verified: false,
       });
     } catch (error) {
       console.error("Driver creation error:", error);
@@ -201,6 +207,8 @@ const handleServiceTypeChange = (e: React.ChangeEvent<HTMLSelectElement>,is_crea
       car_year: driver.car_year || new Date().getFullYear(),
       commission_rate: driver.commission_rate || 0.2,
       status: driver.status || "active",
+      documents_verified: driver.documents_verified || false,
+      is_verified: driver.is_verified || false,
     });
     setShowEditDriver(true);
   };
@@ -1280,6 +1288,42 @@ const handleServiceTypeChange = (e: React.ChangeEvent<HTMLSelectElement>,is_crea
                     Misol: 0.20 = 20%
                   </p>
                 </div>
+                  {/* ✅ Checkbox */}
+                <div className="flex items-center mt-4">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.documents_verified || false}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        documents_verified: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+
+                  <label className="ml-2 text-sm text-gray-700">
+                    Document tekshirildi?
+                  </label>
+                </div>
+                <div className="flex items-center mt-4">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.is_verified || false}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        is_verified: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+
+                  <label className="ml-2 text-sm text-gray-700">
+                    Driver tekshirildi?
+                  </label>
+                </div>
+                
               </div>
             </div>
 
@@ -1534,6 +1578,63 @@ const handleServiceTypeChange = (e: React.ChangeEvent<HTMLSelectElement>,is_crea
                   <p className="text-xs text-gray-500 mt-1">
                     Misol: 0.20 = 20%
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Boshlang`ich summasi` *
+                  </label>
+                  <input
+                    type="number"
+                    min="24000"
+                    step={"1000"}
+                    required
+                    value={formData.driver_balance || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        driver_balance: Number(e.target.value),
+                      })
+                    }
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                    placeholder="24000"
+                  />
+                </div>
+                {/* ✅ Checkbox */}
+                <div className="flex items-center mt-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.documents_verified || false}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        documents_verified: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+
+                  <label className="ml-2 text-sm text-gray-700">
+                    Document tekshirildi?
+                  </label>
+                </div>
+                
+                <div className="flex items-center mt-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_verified || false}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        is_verified: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+
+                  <label className="ml-2 text-sm text-gray-700">
+                    Driver tekshirildi?
+                  </label>
                 </div>
               </div>
             </div>

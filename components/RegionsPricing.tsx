@@ -264,23 +264,23 @@ const handleServiceTypeChange = (e) => {
                       Xizmat turi
                     </label>
                  <select
-  name="service_type_id"
-  value={formData.service_type_id}
-  onChange={handleServiceTypeChange}
-  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-  disabled={!services || services.length === 0}
->
-  {services && services.length > 0 ? (
-    services.map(service => (
-      <option key={service.id} value={service.id}>
-        {service.name}
-      </option>
-    ))
-  ) : (
-    <option value="">Xizmat turlari yuklanmoqda...</option>
-  )}
-</select>
-                  </div>
+                  name="service_type_id"
+                  value={formData.service_type_id}
+                  onChange={handleServiceTypeChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={!services || services.length === 0}
+                >
+                  {services && services.length > 0 ? (
+                    services.map(service => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Xizmat turlari yuklanmoqda...</option>
+                  )}
+                </select>
+                </div>
 
                   {/* Base Pricing */}
                   <div className="mb-6 p-4 bg-blue-50 rounded-lg">

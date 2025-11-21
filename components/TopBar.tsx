@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../api"; // API utils ni import qilish
 import Login from "../app/login/Login";
 import { motion, AnimatePresence } from "framer-motion";
+import { get } from "http";
 
 interface Notification {
   id: number;
@@ -152,7 +153,24 @@ export default function TopBar() {
     }
   };
 
-  // Click outside handlers
+  // User ma'lumotlarini olish
+useEffect(() => {
+  try {
+    const stored = localStorage.getItem("taxigo_user");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+
+      setUser({
+        email: parsed.email || "",
+        role: parsed.role || "admin",       // Agar role yo'q bo'lsa default admin
+        fullName: parsed.name || "Admin",
+      });
+    }
+  } catch (err) {
+    console.error("User local storage parse error:", err);
+  }
+}, []);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -390,7 +408,7 @@ export default function TopBar() {
               />
               <div className="text-left hidden sm:block">
                 <p className="text-sm font-semibold text-#1B2430 truncate max-w-32">
-                  Jasur Akmalov
+                 {getUserDisplayName(user)}
                 </p>
                 <p className="text-xs text-gray-400">
                   {user?.role ? getRoleDisplay(user.role) : "Administrator"}
@@ -424,10 +442,10 @@ export default function TopBar() {
                     />
                     <div className="truncate">
                       <p className="text-sm font-semibold text-white">
-                        Jasur Akmalov
+                       {getUserDisplayName(user)}
                       </p>
                       <p className="text-xs text-gray-400 truncate">
-                        jasur@example.com
+                        {getUserInitials(user)}@example.com 
                       </p>
                       <p className="text-xs text-green-400 font-medium">
                         {user?.role

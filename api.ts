@@ -1,6 +1,6 @@
 // api.ts - Comprehensive API client for React application
 
-import { AdminDashboard, DriverResponse, FareConfig, RegionPricingResponse, RegionResponse, RegionsResponse, updatefareresponse } from "./app/types/types";
+import { AdminDashboard, Driver, DriverResponse, FareConfig, RegionPricingResponse, RegionResponse, RegionsResponse, updatefareresponse } from "./app/types/types";
 import { CreateRegionRequest, LoginRequest, LoginResponse } from "./types";
 
 const API_BASE_URL = "https://ibodov.uz/api/taxi/api/v1";
@@ -73,6 +73,7 @@ export type UpdateDriverRequest = {
   car_year?: number;
   commission_rate?: number;
   status?: string;
+  documents_verified: boolean,
   is_verified?: boolean;
 };
 
@@ -605,6 +606,32 @@ async getAdminRegions(): Promise<RegionsResponse> {
     method: "GET" 
   });
 }
+async getAdminNotifications(params?: {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  search?: string;
+}): Promise<any> {
+  const queryParams = new URLSearchParams();
+
+  if (params?.limit) queryParams.append("limit", params.limit.toString());
+  if (params?.offset) queryParams.append("offset", params.offset.toString());
+  if (params?.status) queryParams.append("status", params.status);
+  if (params?.search) queryParams.append("search", params.search);
+
+  const query = queryParams.toString();
+  const endpoint = query ? `/admin/notifications?${query}` : "/admin/notifications";
+
+  const response = await this.request<any>(endpoint, { method: "GET" });
+
+  // Turli formatlarni handle qilish
+  if (Array.isArray(response)) return response;
+  if (response?.trips) return response.trips;
+  if (response?.data) return response.data;
+  
+  return [];
+}
+
 
 
 
@@ -633,6 +660,16 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
     data: UpdateDriverRequest
   ): Promise<Driver> {
     return await this.request(`/admin/drivers/${driver_id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+    async update_reion(
+    region_id: number,
+    data: CreateRegionRequest
+  ): Promise<any> {
+    return await this.request(`/admin/regions/${region_id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
@@ -762,6 +799,11 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
   // Haydovchini o'chirish
   async delete_driver(driverId: number): Promise<{ message: string }> {
     return await this.request(`/admin/drivers/${driverId}`, {
+      method: "DELETE",
+    });
+  }
+    async delete_region(region_id: number): Promise<{ message: string }> {
+    return await this.request(`/admin/regions/${region_id}`, {
       method: "DELETE",
     });
   }

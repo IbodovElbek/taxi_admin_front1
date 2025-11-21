@@ -39,10 +39,11 @@ import {
 import { api } from "../api";
 import { CreateRegionRequest } from "@/types";
 import { Coordinate, RegionCenter, Regions } from "@/app/types/types";
+import { AlertCircle, Trash2Icon } from "lucide-react";
 
 
 
-type CoordinatesType = Array<number>;
+type CoordinatesType = [number, number];;
 
 interface IMapClickEvent {
   get: (key: string) => CoordinatesType;
@@ -96,7 +97,7 @@ interface ApiResponse<T> {
 
 
 
-const calculatePolygonCenter = (coordinates: number[][]): { lat: number; lng: number } => {
+const calculatePolygonCenter = (coordinates: CoordinatesType[]): { lat: number; lng: number } => {
   if (!coordinates || coordinates.length === 0) {
     return { lat: 0, lng: 0 };
   }
@@ -104,7 +105,7 @@ const calculatePolygonCenter = (coordinates: number[][]): { lat: number; lng: nu
   let latSum = 0;
   let lngSum = 0;
 
-  coordinates.forEach(([lat, lng]) => {
+  coordinates.forEach(([lat, lng]) => {  // Array destructuring
     latSum += lat;
     lngSum += lng;
   });
@@ -385,6 +386,9 @@ const GeocodeMapComponent = () => {
   const [address, setAddress] = useState<IAddress | null>(null);
   const [deliveryStatus, setDeliveryStatus] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [error, setError] = useState('');
+  const [response, setResponse] = useState('');
 
   const ymaps = useYMaps(["geocode"]);
 
@@ -398,16 +402,32 @@ const GeocodeMapComponent = () => {
 
   // Ma'lumotlarni yuklash
   useEffect(() => {
+  if (mapLoaded) {
     loadRegions();
-  }, []);
+  }
+}, [mapLoaded]);
 
-  const loadRegions = async () => {
-    try {
-      const regions = await api.getAdminRegions();
+const loadRegions = async () => {
+  try {
+    const regions = await api.getAdminRegions();
+    console.log("Regions", regions);
+    
+    const formattedPolygons: Regions[] = regions.regions.map(region => {
+      // String formatdagi koordinatalarni parse qilish
+      let coords: number[][];
+      if (typeof region.boundary_coordinates === 'string') {
+        coords = JSON.parse(region.boundary_coordinates);
+      } else {
+        coords = region.boundary_coordinates;
+      }
 
-      const formattedPolygons: Regions[] = regions.regions.map(region => ({
+      // Koordinatalar allaqachon [lat, lng] formatida
+      // Faqat type assertion kerak
+      const boundary_coordinates = coords as CoordinatesType[];
+
+      return {
         id: region.id,
-        boundary_coordinates: region.boundary_coordinates,
+        boundary_coordinates: boundary_coordinates,
         name: region.name,
         country: region.country,
         city: region.city,
@@ -416,61 +436,60 @@ const GeocodeMapComponent = () => {
         timezone: region.timezone,
         is_active: region.is_active,
         color: DEFAULT_POLYGON_COLOR
-      }));
-      console.warn("Loaded regions:",formattedPolygons);
-      setPolygons(formattedPolygons);
+      };
+    });
+    
+    console.warn("Loaded regions:", formattedPolygons);
+    setPolygons(formattedPolygons);
 
-    } catch (error) {
-      console.error('Error loading regions:', error);
-    }
-  };
+  } catch (error) {
+    console.error('Error loading regions:', error);
+  }
+};
 
-  // Xarita bosilganda
   const handleClickMap = (e: IMapClickEvent) => {
-    const coords = e.get("coords");
+  const coords = e.get("coords") as CoordinatesType;
 
-    if (!coords) return;
+  if (!coords) return;
 
-    if (isDrawing) {
-      setPolygonCoords((prev) => [...prev, coords]);
-    } else if (isEditing && selectedPolygonId) {
-      insertPointOnPolygon(coords);
-    } else {
-      setMarkerCoords(coords);
-      getAddressByCoords(coords);
+  if (isDrawing) {
+    console.warn("Adding coord:", coords);
+    setPolygonCoords((prev) => [...prev, coords]);
+  } else if (isEditing && selectedPolygonId) {
+    insertPointOnPolygon(coords);
+  } else {
+    setMarkerCoords(coords);
+    getAddressByCoords(coords);
 
-      const polygonContainingMarker = polygons.find((poly) =>
-        isPointInPolygon(coords, poly.coords)
-      );
+    const polygonContainingMarker = polygons.find((poly) =>
+      isPointInPolygon(coords, poly.boundary_coordinates)
+    );
 
-      setDeliveryStatus(
-        polygonContainingMarker
-          ? `Входит в зону доставки: ${polygonContainingMarker.name}`
-          : "Вне зоны доставки"
-      );
-    }
-  };
+    setDeliveryStatus(
+      polygonContainingMarker
+        ? `Falls within the taxi zone: ${polygonContainingMarker.name}`
+        : "Outside the delivery zone"
+    );
+  }
+};
 
   // Nuqta poligon ichida yoki yo'qligini tekshirish
   const isPointInPolygon = (point: CoordinatesType, polygon: CoordinatesType[]) => {
-    const x = point[0];
-    const y = point[1];
-    let inside = false;
+  const [x, y] = point;
+  let inside = false;
 
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const xi = polygon[i][0];
-      const yi = polygon[i][1];
-      const xj = polygon[j][0];
-      const yj = polygon[j][1];
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
 
-      const intersect =
-        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    const intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
 
-      if (intersect) inside = !inside;
-    }
+    if (intersect) inside = !inside;
+  }
 
-    return inside;
-  };
+  return inside;
+};
 
   // Koordinata → manzil
   function getAddressByCoords(coords: CoordinatesType) {
@@ -496,25 +515,25 @@ const GeocodeMapComponent = () => {
 
   // Poligon markazini hisoblash
   const handleCalculateCenter = async () => {
-    if (polygonCoords.length < 3) {
-      message.warning('Markaz hisoblash uchun kamida 3 ta nuqta kerak');
-      return;
-    }
+  if (polygonCoords.length < 3) {
+    message.warning('Markaz hisoblash uchun kamida 3 ta nuqta kerak');
+    return;
+  }
 
-    const center = calculatePolygonCenter(polygonCoords);
-    const centerCoords: CoordinatesType = [center.lat, center.lng];
-    const region_data=await getLocationName(center.lat, center.lng);
-    const region_data_str:RegionCenter = {
-      country: region_data?.country || "Noma'lum",
-      city: region_data?.city || region_data?.town || "Noma'lum",
-      latitude: center.lat || 0.0,
-      longitude: center.lng || 0.0,
-    };
-
-    console.warn("dskdjnvdkf:",region_data);
-    setPolygonCenter(region_data_str);
-    message.success('Poligon markazi hisoblandi!');
+  const center = calculatePolygonCenter(polygonCoords);
+  const region_data = await getLocationName(center.lat, center.lng);
+  
+  const region_data_str: RegionCenter = {
+    country: region_data?.country || "Noma'lum",
+    city: region_data?.city || region_data?.town || "Noma'lum",
+    latitude: center.lat,
+    longitude: center.lng,
   };
+
+  console.warn("Region center:", region_data_str);
+  setPolygonCenter(region_data_str);
+  message.success('Poligon markazi hisoblandi!');
+};
 interface OpenCageAddress {
   country?: string;
   city?: string;
@@ -570,7 +589,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
         
 
         const createdRegion = await api.create_region(regionData);
-        
+        setResponse('Yangi hudud muvaffaqiyatli yaratildi!');
         const newPolygon: Regions = {
           id: createdRegion.region_id,
           boundary_coordinates: polygonCoords,
@@ -587,6 +606,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
         setPolygons((prev) => [...prev, newPolygon]);
         message.success('Hudud API ga saqlandi!');
       } catch (error) {
+        setError(`${error}`);
         console.error('Error saving polygon:', error);
         message.error('API da xatolik yuz berdi');
       } finally {
@@ -630,105 +650,144 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
     if (selectedPolygonId) setIsEditing(true);
   };
   const handleFinishEditing = () => {
+    try{
+      if (!selectedPolygonId) return;
+      const polygonToUpdate = polygons.find(poly => poly.id === selectedPolygonId);
+      if (!polygonToUpdate) return;
+      const updateData: CreateRegionRequest = {
+        name: polygonToUpdate.name,
+        city: polygonToUpdate.city,
+        country: polygonToUpdate.country,
+        boundary_coordinates: polygonToUpdate.boundary_coordinates,
+        center_latitude: polygonToUpdate.center_latitude,
+        center_longitude: polygonToUpdate.center_longitude,
+        timezone: polygonToUpdate.timezone,
+        is_active: polygonToUpdate.is_active,
+      };
+      const res= api.update_reion(selectedPolygonId, updateData);
+      console.warn("Updated region:",res);
+      setResponse('Polygon updated successfully!');
+    }
+    catch (error) {
+      console.error('Error updating polygon:', error);
+      setError(`${error}`);
+    }
     setIsEditing(false);
+  };
+  const handleDeletePolygon = async () => {
+    try {
+    const res= await api.delete_region(selectedPolygonId!);
+    console.warn("Deleted region:",res);
+    setPolygons((prev) => prev.filter((poly) => poly.id !== selectedPolygonId)); 
+    setIsEditing(false);
+    setResponse('Polygon deleted successfully!');
+    } catch (error) {
+      setError(`${error}`);
+      console.error('Error deleting polygon:', error);
+    }
   };
 
   const handleDragPoint = (index: number, event: IDragEvent) => {
-    if (!isEditing || !selectedPolygonId) return;
+  if (!isEditing || !selectedPolygonId) return;
 
-    const newCoords = event.get("target").geometry.getCoordinates();
+  const newCoords = event.get("target").geometry.getCoordinates() as CoordinatesType;
 
+  setPolygons((prev) =>
+    prev.map((poly) =>
+      poly.id === selectedPolygonId
+        ? {
+            ...poly,
+            boundary_coordinates: poly.boundary_coordinates.map((coord, i) =>
+              i === index ? newCoords : coord
+            )
+          }
+        : poly
+    )
+  );
+};
+
+const insertPointOnPolygon = (clickCoords: CoordinatesType) => {
+  if (!selectedPolygonId || !selectedPolygon) return;
+
+  let minDistance = Infinity;
+  let insertIndex = -1;
+
+  for (let i = 0; i < selectedPolygon.boundary_coordinates.length; i++) {
+    const p1 = selectedPolygon.boundary_coordinates[i];
+    const p2 = selectedPolygon.boundary_coordinates[(i + 1) % selectedPolygon.boundary_coordinates.length];
+    const distance = pointToSegmentDistance(clickCoords, p1, p2);
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      insertIndex = i + 1;
+    }
+  }
+
+  if (insertIndex !== -1) {
     setPolygons((prev) =>
       prev.map((poly) =>
         poly.id === selectedPolygonId
           ? {
               ...poly,
-              coords: poly.boundary_coordinates.map((coord, i) =>
-                i === index ? newCoords : coord
-              )
+              boundary_coordinates: [
+                ...poly.boundary_coordinates.slice(0, insertIndex),
+                clickCoords,
+                ...poly.boundary_coordinates.slice(insertIndex)
+              ]
             }
           : poly
       )
     );
-  };
+  }
+};
 
-  const insertPointOnPolygon = (clickCoords: CoordinatesType) => {
-    if (!selectedPolygonId || !selectedPolygon) return;
+const pointToSegmentDistance = (
+  point: CoordinatesType,
+  segmentStart: CoordinatesType,
+  segmentEnd: CoordinatesType
+) => {
+  const [pointX, pointY] = point;
+  const [startX, startY] = segmentStart;
+  const [endX, endY] = segmentEnd;
 
-    let minDistance = Infinity;
-    let insertIndex = -1;
+  const A = pointX - startX;
+  const B = pointY - startY;
+  const C = endX - startX;
+  const D = endY - startY;
 
-    for (let i = 0; i < selectedPolygon.boundary_coordinates.length; i++) {
-      const p1 = selectedPolygon.boundary_coordinates[i];
-      const p2 = selectedPolygon.boundary_coordinates[(i + 1) % selectedPolygon.boundary_coordinates.length];
-      const distance = pointToSegmentDistance(clickCoords, p1, p2);
+  const dot = A * C + B * D;
+  const lenSquare = C * C + D * D;
+  let param = -1;
 
-      if (distance < minDistance) {
-        minDistance = distance;
-        insertIndex = i + 1;
-      }
-    }
+  if (lenSquare !== 0) param = dot / lenSquare;
 
-    if (insertIndex !== -1) {
-      setPolygons((prev) =>
-        prev.map((poly) =>
-          poly.id === selectedPolygonId
-            ? {
-                ...poly,
-                coords: [
-                  ...poly.boundary_coordinates.slice(0, insertIndex),
-                  clickCoords,
-                  ...poly.boundary_coordinates.slice(insertIndex)
-                ]
-              }
-            : poly
-        )
-      );
-    }
-  };
+  let xx, yy;
+  if (param < 0) {
+    xx = startX;
+    yy = startY;
+  } else if (param > 1) {
+    xx = endX;
+    yy = endY;
+  } else {
+    xx = startX + param * C;
+    yy = startY + param * D;
+  }
 
-  const pointToSegmentDistance = (
-    point: CoordinatesType,
-    segmentStart: CoordinatesType,
-    segmentEnd: CoordinatesType
-  ) => {
-    const A = point[0] - segmentStart[0];
-    const B = point[1] - segmentStart[1];
-    const C = segmentEnd[0] - segmentStart[0];
-    const D = segmentEnd[1] - segmentStart[1];
-
-    const dot = A * C + B * D;
-    const lenSquare = C * C + D * D;
-    let param = -1;
-
-    if (lenSquare !== 0) param = dot / lenSquare;
-
-    let xx, yy;
-    if (param < 0) {
-      xx = segmentStart[0];
-      yy = segmentStart[1];
-    } else if (param > 1) {
-      xx = segmentEnd[0];
-      yy = segmentEnd[1];
-    } else {
-      xx = segmentStart[0] + param * C;
-      yy = segmentStart[1] + param * D;
-    }
-
-    const dx = point[0] - xx;
-    const dy = point[1] - yy;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
+  const dx = pointX - xx;
+  const dy = pointY - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+};
 
   return (
     <MainContainer>
       <ContentWrapper>
         <Header>
-          <h1>🗺️ Интерактивная карта доставки</h1>
-          <p>Создавайте зоны доставки и проверяйте адреса</p>
+          <h1>🗺️Interactive Taxi Map</h1>
+          <p>Create Taxi zones and validate addresses</p>
         </Header>
 
         <MapSection>
+          
           <Sidebar>
             {address ? (
               <AddressCard>
@@ -748,14 +807,28 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
             ) : (
               <EmptyState>
                 <EnvironmentOutlined className="empty-icon" />
-                <h3>Выберите точку на карте</h3>
-                <p>Кликните на карту для получения информации о местоположении</p>
+                <h3>Select a point on the map</h3>
+                <p>Click on the map to get location information</p>
+                {/* Success Message */}
+                  {response && (
+                    <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                      {response }
+                    </div>
+                  )}
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+                      <AlertCircle className="mr-2" size={20} />
+                      {error}
+                    </div>
+                  )}
               </EmptyState>
             )}
 
             <ControlSection>
               <div className="section-title">
-                <PlusOutlined /> Создание полигонов
+                <PlusOutlined /> Creating polygons
               </div>
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 <ActionButton
@@ -767,7 +840,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                   }}
                   disabled={isDrawing || isEditing}
                 >
-                  Начать рисование
+                  Start drawing
                 </ActionButton>
                 
                 <ActionButton
@@ -785,7 +858,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                   disabled={!isDrawing}
                   loading={isLoading}
                 >
-                  Завершить рисование
+                  Finish drawing
                 </ActionButton>
               </Space>
             </ControlSection>
@@ -794,7 +867,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
 
             <ControlSection>
               <div className="section-title">
-                <EditOutlined /> Редактирование
+                <EditOutlined /> Editing
               </div>
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 <ActionButton
@@ -802,7 +875,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                   onClick={handleStartEditing}
                   disabled={isEditing || isDrawing || !selectedPolygonId}
                 >
-                  Начать редактирование
+                  Start editing
                 </ActionButton>
                 
                 <ActionButton
@@ -810,9 +883,40 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                   onClick={handleFinishEditing}
                   disabled={!isEditing}
                 >
-                  Завершить редактирование
+                  Finish editing
                 </ActionButton>
-                
+                <ActionButton
+                  icon={<Trash2Icon/>}
+                  onClick={handleDeletePolygon}
+                  disabled={!isEditing}
+                >
+                  Delete Polygon
+                </ActionButton>
+                {/* ✅ Checkbox */}
+                {selectedPolygon && (
+                  <div className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedPolygon?.is_active ?? true}
+                      onChange={(e) => {
+                        const isActive = e.target.checked;
+                        setPolygons((prev) =>
+                          prev.map((poly) =>
+                            poly.id === selectedPolygonId
+                              ? { ...poly, is_active: isActive }
+                              : poly
+                          )
+                        );
+                      }}
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+
+                    <label className="ml-2 text-sm text-gray-700">
+                      Is Active?
+                    </label>
+                  </div>
+                )}
+
                 <StyledSelect
                   placeholder="Выберите полигон"
                   onChange={(id) => setSelectedPolygonId(id)}
@@ -829,21 +933,25 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                 <Divider />
                 <ControlSection>
                   <div className="section-title">
-                    📋 Созданные зоны ({polygons.length})
+                    📋 Created zones ({polygons.length})
                   </div>
                   <div>
                     {polygons.map((poly) => (
-                      <PolygonTag
+                      <Polygon
                         key={poly.id}
-                        color={poly.color}
-                        onClick={() => setSelectedPolygonId(poly.id)}
-                        style={{
-                          backgroundColor: poly.color,
-                          border: selectedPolygonId === poly.id ? '2px solid #333' : 'none'
+                        geometry={[poly.boundary_coordinates]} // poly.coords emas!
+                        options={{
+                          fillColor: poly.color,
+                          strokeColor:
+                            poly.id === selectedPolygonId && isEditing
+                              ? "#FF0000"
+                              : "#0000FF",
+                          opacity: 0.5,
+                          strokeWidth: 5,
+                          strokeStyle: "shortdash",
+                          interactivityModel: "default#transparent"
                         }}
-                      >
-                        {poly.name}
-                      </PolygonTag>
+                      />
                     ))}
                   </div>
                 </ControlSection>
@@ -859,6 +967,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                 controls: []
               }}
               onClick={(e: IMapClickEvent) => handleClickMap(e)}
+              onLoad={() => setMapLoaded(true)} // Map yuklanganda
               options={{
                 suppressMapOpenBlock: true,
               }}
@@ -899,10 +1008,10 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                 />
               )}
 
-              {polygons.map((poly) => (
+              {mapLoaded && polygons.map((poly) => (
                 <Polygon
                   key={poly.id}
-                  geometry={[poly.coords]}
+                  geometry={[poly.boundary_coordinates]}
                   options={{
                     fillColor: poly.color,
                     strokeColor:
@@ -917,7 +1026,8 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                 />
               ))}
 
-              {isDrawing &&
+
+              {mapLoaded && isDrawing &&
                 polygonCoords.map((coord, index) => (
                   <Circle
                     key={index}
@@ -932,7 +1042,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                 ))}
 
               {/* Poligon markazi */}
-              {isDrawing && polygonCenter && (
+              {mapLoaded && isDrawing && polygonCenter && (
                 <Circle
                   geometry={[polygonCenter, 50]}
                   options={{
@@ -944,22 +1054,22 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
                 />
               )}
 
-              {isEditing &&
-                selectedPolygon?.coords.map((coord, index) => (
-                  <Circle
-                    key={index}
-                    geometry={[coord, 50]}
-                    options={{
-                      fillColor: "#0000FF",
-                      strokeColor: "#FF0000",
-                      strokeWidth: 3,
-                      draggable: true
-                    }}
-                    onDrag={(e: IDragEvent) => handleDragPoint(index, e)}
-                  />
-                ))}
+              {mapLoaded && isEditing &&
+              selectedPolygon?.boundary_coordinates.map((coord, index) => ( // coords emas!
+                <Circle
+                  key={index}
+                  geometry={[coord, 50]}
+                  options={{
+                    fillColor: "#0000FF",
+                    strokeColor: "#FF0000",
+                    strokeWidth: 3,
+                    draggable: true
+                  }}
+                  onDrag={(e: IDragEvent) => handleDragPoint(index, e)}
+                />
+              ))}
 
-              {markerCoords && <Placemark geometry={markerCoords} />}
+              {mapLoaded && markerCoords && <Placemark geometry={markerCoords} />}
             </StyledMap>
           </MapContainer>
         </MapSection>
@@ -997,7 +1107,7 @@ const getLocationName = async (lat: number, lon: number): Promise<OpenCageAddres
 // Export qilinadigan component
 export default function GeocodeMap() {
   return (
-    <YMaps query={{ apikey: "480bd99f-58bd-473b-8e54-0972e1fadefa", lang: "ru_RU" }}>
+    <YMaps query={{ apikey: "480bd99f-58bd-473b-8e54-0972e1fadefa", lang: "en_US" }}>
       <GeocodeMapComponent />
     </YMaps>
   );

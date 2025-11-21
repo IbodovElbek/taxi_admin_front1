@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Sidebar from "../../components/Sidebar";
 import TopBar from "../../components/TopBar";
+import { api } from "@/api";
 
 /**
  * Notifications Admin Page
@@ -141,7 +142,7 @@ export default function NotificationsPage() {
       const params: any = { limit, offset: currentOffset };
       if (searchQuery.trim()) params.q = searchQuery.trim();
 
-      const res = await axios.get("/admin/notifications", { params });
+      const res = await api.getAdminNotifications(params);
       const items: any[] = res.data?.notifications || res.data || [];
 
       if (reset) {
