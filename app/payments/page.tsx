@@ -1,114 +1,134 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
-
-const paymentsData = [
-  {
-    id: 'P001',
-    rideId: 'R001',
-    rider: 'Ahmad Karimov',
-    driver: 'Jasur Toshev',
-    amount: '15,000',
-    commission: '2,250',
-    driverEarning: '12,750',
-    method: 'cash',
-    status: 'completed',
-    date: '2024-01-15 14:35'
-  },
-  {
-    id: 'P002',
-    rideId: 'R002',
-    rider: 'Malika Saidova',
-    driver: 'Bobur Rahmonov',
-    amount: '22,000',
-    commission: '3,300',
-    driverEarning: '18,700',
-    method: 'card',
-    status: 'pending',
-    date: '2024-01-15 15:50'
-  },
-  {
-    id: 'P003',
-    rideId: 'R003',
-    rider: 'Dilshod Ergashev',
-    driver: 'Otabek Nazarov',
-    amount: '35,000',
-    commission: '5,250',
-    driverEarning: '29,750',
-    method: 'wallet',
-    status: 'failed',
-    date: '2024-01-15 12:20'
-  },
-  {
-    id: 'P004',
-    rideId: 'R004',
-    rider: 'Nigora Abdullayeva',
-    driver: 'Sanjar Umarov',
-    amount: '18,000',
-    commission: '2,700',
-    driverEarning: '15,300',
-    method: 'card',
-    status: 'refunded',
-    date: '2024-01-15 16:05'
-  }
-];
-
-const withdrawalRequests = [
-  {
-    id: 'W001',
-    driver: 'Jasur Toshev',
-    amount: '450,000',
-    method: 'bank_transfer',
-    status: 'pending',
-    requestDate: '2024-01-15 10:30',
-    cardNumber: '8600 **** **** 1234'
-  },
-  {
-    id: 'W002',
-    driver: 'Bobur Rahmonov',
-    amount: '650,000',
-    method: 'bank_transfer',
-    status: 'approved',
-    requestDate: '2024-01-14 16:20',
-    cardNumber: '9860 **** **** 5678'
-  },
-  {
-    id: 'W003',
-    driver: 'Sanjar Umarov',
-    amount: '320,000',
-    method: 'cash',
-    status: 'rejected',
-    requestDate: '2024-01-14 14:15',
-    cardNumber: null
-  }
-];
+import { api } from '../../api';
+import type { PaymentAnalyticsResponse, PaymentHistoryItem } from '../types/types';
 
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState('payments');
-  const [payments] = useState(paymentsData);
-  const [withdrawals, setWithdrawals] = useState(withdrawalRequests);
+  const [paymentData, setPaymentData] = useState<PaymentAnalyticsResponse | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Sana state'lari
+  const [dateFrom, setDateFrom] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30); // 30 kun oldin
+    return date.toISOString().split('T')[0];
+  });
+  
+  const [dateTo, setDateTo] = useState<string>(() => {
+    const date = new Date();
+    return date.toISOString().split('T')[0]; // Bugun
+  });
+
+  // Ma'lumotlarni yuklash
+  useEffect(() => {
+    if (dateFrom && dateTo) {
+      loadData();
+    }
+  }, [dateFrom, dateTo]);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('Fetching data with dates:', { dateFrom, dateTo });
+      const data = await api.fetchPaymentAnalytics(dateFrom, dateTo);
+      console.log('Received data:', data);
+      
+      setPaymentData(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Xatolik yuz berdi';
+      setError(errorMessage);
+      console.error('Error loading data:', err);
+      console.error('Date range:', { dateFrom, dateTo });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Export funksiyasi
+  const handleExport = async () => {
+    if (!dateFrom || !dateTo) {
+      setError('Iltimos, sana oralig\'ini tanlang');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      const blob = await api.exportPaymentAnalytics(dateFrom, dateTo);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `payment-analytics-${dateFrom}-to-${dateTo}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      setError('Export qilishda xatolik yuz berdi');
+      console.error('Export error:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Date From o'zgarishi
+  const handleDateFromChange = (value: string) => {
+    setDateFrom(value);
+    // Agar dateTo dateFrom dan kichik bo'lsa, dateTo ni yangilash
+    if (dateTo && value > dateTo) {
+      setDateTo(value);
+    }
+  };
+
+  // Date To o'zgarishi
+  const handleDateToChange = (value: string) => {
+    // Faqat dateFrom dan katta yoki teng bo'lsa qabul qilish
+    if (value >= dateFrom) {
+      setDateTo(value);
+    } else {
+      setError('Tugash sanasi boshlanish sanasidan kichik bo\'lmasligi kerak');
+    }
+  };
+
+  // Tez sana tanlash funksiyalari
+  const setQuickDate = (days: number) => {
+    const today = new Date();
+    const fromDate = new Date();
+    fromDate.setDate(today.getDate() - days);
+    
+    setDateFrom(fromDate.toISOString().split('T')[0]);
+    setDateTo(today.toISOString().split('T')[0]);
+  };
+
+  // Qidiruv filtri
+  const filteredPayments = paymentData?.payment_history.filter(payment => 
+    payment.trip_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.driver_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.service_type_name.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   const getStatusBadge = (status: string) => {
     const styles = {
       completed: 'bg-green-100 text-green-700',
       pending: 'bg-yellow-100 text-yellow-700',
       failed: 'bg-red-100 text-red-700',
-      refunded: 'bg-gray-100 text-gray-700',
-      approved: 'bg-blue-100 text-blue-700',
-      rejected: 'bg-red-100 text-red-700'
+      refunded: 'bg-gray-100 text-gray-700'
     };
 
     const labels = {
       completed: 'Yakunlangan',
       pending: 'Kutilmoqda',
       failed: 'Muvaffaqiyatsiz',
-      refunded: 'Qaytarilgan',
-      approved: 'Tasdiqlangan',
-      rejected: 'Rad etilgan'
+      refunded: 'Qaytarilgan'
     };
 
     return { 
@@ -138,15 +158,20 @@ export default function PaymentsPage() {
     };
   };
 
-  const handleWithdrawalAction = (withdrawalId: string, action: 'approve' | 'reject') => {
-    setWithdrawals(prev => prev.map(withdrawal => 
-      withdrawal.id === withdrawalId ? {...withdrawal, status: action === 'approve' ? 'approved' : 'rejected'} : withdrawal
-    ));
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('uz-UZ', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const totalRevenue = payments.reduce((sum, payment) => sum + parseInt(payment.amount.replace(/,/g, '')), 0);
-  const totalCommission = payments.reduce((sum, payment) => sum + parseInt(payment.commission.replace(/,/g, '')), 0);
-  const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending').length;
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('uz-UZ');
+  };
 
   return (
     <div className="bg-[#F4F6F8] min-h-screen">
@@ -156,221 +181,241 @@ export default function PaymentsPage() {
         <main className="pt-20 p-6">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-800 mb-2">To'lovlar va Daromadlar</h1>
-              <p className="text-gray-600">To'lovlarni boshqaring va haydovchilarning daromadlarini kuzatib boring</p>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <i className="ri-money-dollar-circle-line text-green-600 text-2xl"></i>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-800">{totalRevenue.toLocaleString()}</p>
-                    <p className="text-sm text-gray-600">Jami Daromad (so'm)</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <i className="ri-percent-line text-blue-600 text-2xl"></i>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-800">{totalCommission.toLocaleString()}</p>
-                    <p className="text-sm text-gray-600">Jami Komissiya (so'm)</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <i className="ri-time-line text-yellow-600 text-2xl"></i>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-800">{pendingWithdrawals}</p>
-                    <p className="text-sm text-gray-600">Kutilayotgan Yechimlar</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <i className="ri-wallet-3-line text-purple-600 text-2xl"></i>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-800">{payments.length}</p>
-                    <p className="text-sm text-gray-600">Jami To'lovlar</p>
-                  </div>
-                </div>
+            <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">To'lovlar va Daromadlar</h1>
+                <p className="text-gray-600">To'lovlarni boshqaring va haydovchilarning daromadlarini kuzatib boring</p>
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-              <div className="flex border-b border-gray-200">
-                <button
-                  onClick={() => setActiveTab('payments')}
-                  className={`px-6 py-4 font-medium text-sm transition-colors duration-200 whitespace-nowrap ${
-                    activeTab === 'payments'
-                      ? 'border-b-2 border-[#1E2A38] text-[#1E2A38]'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  To'lovlar Tarixi
-                </button>
-                <button
-                  onClick={() => setActiveTab('withdrawals')}
-                  className={`px-6 py-4 font-medium text-sm transition-colors duration-200 whitespace-nowrap ${
-                    activeTab === 'withdrawals'
-                      ? 'border-b-2 border-[#1E2A38] text-[#1E2A38]'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Pul Yechish So'rovlari
-                </button>
-              </div>
+            {/* Date Range Selector */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+              <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end">
+                {/* Quick Date Buttons */}
+                
 
-              {/* Search */}
-              <div className="p-6 border-b border-gray-100">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="To'lov, haydovchi yoki yo'lovchi qidirish..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="bg-[#F4F6F8] border border-gray-200 rounded-lg px-4 py-2 pl-10 w-full md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                  <div className="w-5 h-5 flex items-center justify-center absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <i className="ri-search-line text-gray-400"></i>
+                {/* Date Inputs */}
+                <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Boshlanish sanasi
+                    </label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => handleDateFromChange(e.target.value)}
+                      max={dateTo}
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tugash sanasi
+                    </label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => handleDateToChange(e.target.value)}
+                      min={dateFrom}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
                   </div>
                 </div>
-              </div>
 
-              {/* Tab Content */}
-              <div className="p-6">
-                {activeTab === 'payments' && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 text-sm font-semibold text-gray-800">To'lov ID</th>
-                          <th className="text-left py-3 text-sm font-semibold text-gray-800">Yo'lovchi</th>
-                          <th className="text-left py-3 text-sm font-semibold text-gray-800">Haydovchi</th>
-                          <th className="text-left py-3 text-sm font-semibold text-gray-800">Summa</th>
-                          <th className="text-left py-3 text-sm font-semibold text-gray-800">Komissiya</th>
-                          <th className="text-left py-3 text-sm font-semibold text-gray-800">Usul</th>
-                          <th className="text-left py-3 text-sm font-semibold text-gray-800">Holati</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {payments.map((payment) => {
-                          const statusBadge = getStatusBadge(payment.status);
-                          const methodBadge = getMethodBadge(payment.method);
-                          return (
-                            <tr key={payment.id} className="hover:bg-gray-50">
-                              <td className="py-4">
-                                <div className="font-semibold text-gray-800">{payment.id}</div>
-                                <div className="text-sm text-gray-500">{payment.date}</div>
-                              </td>
-                              <td className="py-4">
-                                <div className="font-medium text-gray-800">{payment.rider}</div>
-                              </td>
-                              <td className="py-4">
-                                <div className="font-medium text-gray-800">{payment.driver}</div>
-                              </td>
-                              <td className="py-4">
-                                <div className="font-semibold text-gray-800">{payment.amount} so'm</div>
-                                <div className="text-sm text-gray-500">Haydovchi: {payment.driverEarning} so'm</div>
-                              </td>
-                              <td className="py-4">
-                                <div className="font-medium text-gray-800">{payment.commission} so'm</div>
-                              </td>
-                              <td className="py-4">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${methodBadge.style}`}>
-                                  {methodBadge.label}
-                                </span>
-                              </td>
-                              <td className="py-4">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusBadge.style}`}>
-                                  {statusBadge.label}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                {/* Export Button */}
+                <button
+                  onClick={handleExport}
+                  disabled={isExporting || isLoading}
+                  className="bg-[#1E2A38] text-white px-4 py-2 rounded-lg hover:bg-[#2a3a4d] transition-colors text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  <i className={`${isExporting ? 'ri-loader-4-line animate-spin' : 'ri-download-line'}`}></i>
+                  {isExporting ? 'Yuklanmoqda...' : 'Export'}
+                </button>
+              </div>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                <i className="ri-error-warning-line"></i>
+                <span>{error}</span>
+                <button onClick={() => setError(null)} className="ml-auto">
+                  <i className="ri-close-line"></i>
+                </button>
+              </div>
+            )}
+
+            {/* Loading state */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <i className="ri-loader-4-line text-4xl text-gray-400 animate-spin mb-4"></i>
+                  <p className="text-gray-600">Yuklanmoqda...</p>
+                </div>
+              </div>
+            ) : paymentData ? (
+              <>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 flex items-center justify-center">
+                        <i className="ri-money-dollar-circle-line text-green-600 text-2xl"></i>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-800">{formatCurrency(paymentData.summary.total_fare)}</p>
+                        <p className="text-sm text-gray-600">Jami Daromad (so'm)</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 flex items-center justify-center">
+                        <i className="ri-percent-line text-blue-600 text-2xl"></i>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-800">{formatCurrency(paymentData.summary.total_commission)}</p>
+                        <p className="text-sm text-gray-600">Jami Komissiya (so'm)</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 flex items-center justify-center">
+                        <i className="ri-wallet-3-line text-purple-600 text-2xl"></i>
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-gray-800">{paymentData.summary.total_payments_count}</p>
+                        <p className="text-sm text-gray-600">Jami To'lovlar</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Range Info */}
+                {paymentData.summary.date_from && paymentData.summary.date_to && (
+                  <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                    <i className="ri-calendar-line"></i>
+                    <span>
+                      Davr: {formatDate(paymentData.summary.date_from)} - {formatDate(paymentData.summary.date_to)}
+                    </span>
                   </div>
                 )}
 
-                {activeTab === 'withdrawals' && (
-                  <div className="space-y-4">
-                    {withdrawals.map((withdrawal) => {
-                      const statusBadge = getStatusBadge(withdrawal.status);
-                      const methodBadge = getMethodBadge(withdrawal.method);
-                      return (
-                        <div key={withdrawal.id} className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow duration-200">
-                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-[#1E2A38] rounded-full flex items-center justify-center">
-                                  <span className="text-white font-semibold">
-                                    {withdrawal.driver.split(' ').map(n => n[0]).join('')}
-                                  </span>
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="font-semibold text-gray-800">{withdrawal.driver}</h3>
-                                  <p className="text-sm text-gray-600">ID: {withdrawal.id}</p>
-                                  <p className="text-xs text-gray-500 mt-1">{withdrawal.requestDate}</p>
-                                  {withdrawal.cardNumber && (
-                                    <p className="text-xs text-gray-500">Karta: {withdrawal.cardNumber}</p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                {/* Payments Table */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
+                  <div className="flex border-b border-gray-200">
+                    <button
+                      onClick={() => setActiveTab('payments')}
+                      className={`px-6 py-4 font-medium text-sm transition-colors duration-200 whitespace-nowrap ${
+                        activeTab === 'payments'
+                          ? 'border-b-2 border-[#1E2A38] text-[#1E2A38]'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      To'lovlar Tarixi
+                      <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                        {paymentData.payment_history.length}
+                      </span>
+                    </button>
+                  </div>
 
-                            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
-                              <div className="text-right">
-                                <p className="text-xl font-bold text-gray-800">{withdrawal.amount} so'm</p>
-                                <div className="flex gap-2 mt-2">
-                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${methodBadge.style}`}>
-                                    {methodBadge.label}
-                                  </span>
-                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusBadge.style}`}>
-                                    {statusBadge.label}
-                                  </span>
-                                </div>
-                              </div>
+                  {/* Search */}
+                  <div className="p-6 border-b border-gray-100">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Sayohat raqami, yo'lovchi, haydovchi yoki xizmat turini qidirish..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-[#F4F6F8] border border-gray-200 rounded-lg px-4 py-2 pl-10 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                      <div className="w-5 h-5 flex items-center justify-center absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <i className="ri-search-line text-gray-400"></i>
+                      </div>
+                    </div>
+                  </div>
 
-                              {withdrawal.status === 'pending' && (
-                                <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => handleWithdrawalAction(withdrawal.id, 'approve')}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm whitespace-nowrap"
-                                  >
-                                    Tasdiqlash
-                                  </button>
-                                  <button 
-                                    onClick={() => handleWithdrawalAction(withdrawal.id, 'reject')}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm whitespace-nowrap"
-                                  >
-                                    Rad etish
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                  {/* Tab Content */}
+                  <div className="p-6">
+                    <div className="overflow-x-auto">
+                      {filteredPayments.length === 0 ? (
+                        <div className="text-center py-12">
+                          <i className="ri-file-list-line text-4xl text-gray-300 mb-4"></i>
+                          <p className="text-gray-500">
+                            {searchTerm ? 'Hech qanday natija topilmadi' : 'To\'lovlar mavjud emas'}
+                          </p>
                         </div>
-                      );
-                    })}
+                      ) : (
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Sayohat</th>
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Yo'lovchi</th>
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Haydovchi</th>
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Xizmat</th>
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Summa</th>
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Komissiya</th>
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Usul</th>
+                              <th className="text-left py-3 px-2 text-sm font-semibold text-gray-800">Holati</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {filteredPayments.map((payment) => {
+                              const statusBadge = getStatusBadge(payment.payment_status);
+                              const methodBadge = getMethodBadge(payment.payment_method);
+                              return (
+                                <tr key={payment.trip_number} className="hover:bg-gray-50">
+                                  <td className="py-4 px-2">
+                                    <div className="font-semibold text-gray-800">#{payment.trip_number}</div>
+                                    <div className="text-sm text-gray-500">{formatDate(payment.completed_at)}</div>
+                                    <div className="text-xs text-gray-400">{payment.pickup_region_name}</div>
+                                  </td>
+                                  <td className="py-4 px-2">
+                                    <div className="font-medium text-gray-800">{payment.customer_name}</div>
+                                    <div className="text-xs text-gray-500">ID: {payment.customer_id}</div>
+                                  </td>
+                                  <td className="py-4 px-2">
+                                    <div className="font-medium text-gray-800">{payment.driver_name}</div>
+                                    <div className="text-xs text-gray-500">ID: {payment.driver_id}</div>
+                                  </td>
+                                  <td className="py-4 px-2">
+                                    <div className="text-sm text-gray-800">{payment.service_type_name}</div>
+                                  </td>
+                                  <td className="py-4 px-2">
+                                    <div className="font-semibold text-gray-800">{formatCurrency(payment.total_fare)} so'm</div>
+                                  </td>
+                                  <td className="py-4 px-2">
+                                    <div className="font-medium text-gray-800">{formatCurrency(payment.commission_amount)} so'm</div>
+                                    <div className="text-xs text-gray-500">
+                                      {payment.total_fare > 0 ? 
+                                        `${((payment.commission_amount / payment.total_fare) * 100).toFixed(1)}%` 
+                                        : '0%'
+                                      }
+                                    </div>
+                                  </td>
+                                  <td className="py-4 px-2">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${methodBadge.style}`}>
+                                      {methodBadge.label}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-2">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusBadge.style}`}>
+                                      {statusBadge.label}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </>
+            ) : null}
 
             {/* Footer */}
             <footer className="mt-12 lg:mt-16 bg-white rounded-xl p-6 lg:p-8 shadow-sm border border-gray-100">

@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Sidebar from "../../components/Sidebar";
+import LanguageSwitcher  from "../../components/LanguageSwitcher";
 import TopBar from "../../components/TopBar";
-import { api } from "@/api";
+import { api } from "../../api";
 
 /**
  * Notifications Admin Page
@@ -42,6 +42,8 @@ export default function NotificationsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [fetchingMore, setFetchingMore] = useState(false);
+  const [filterTargetType, setFilterTargetType] = useState<string>("all");
+  const [includeExpired, setIncludeExpired] = useState(true);
 
   // ============ HELPER FUNCTIONS ============
   const showToast = (type: "success" | "error", message: string) => {
@@ -75,93 +77,104 @@ export default function NotificationsPage() {
    * - Handles success/error states
    * - Refreshes history on success
    */
-  const sendNotification = async () => {
-    if (!canSend()) return;
-    setSending(true);
+const sendNotification = async () => {
+  if (!canSend()) return;
+  setSending(true);
 
-    let payload: any = {
+  try {
+    // API uchun to'g'ri formatda data tayyorlash
+    const requestData: any = {
       title: title.trim(),
       body: body.trim(),
       action: action?.trim() || null,
     };
 
-    // Construct payload based on active tab
+    // Tab va recipient type ni to'g'ri o'rnatish
     if (activeTab === "bulk") {
-      payload.recipient_type =
-        recipientType === "all_users"
-          ? "all"
-          : recipientType === "drivers"
-          ? "drivers"
-          : "customers";
+      requestData.recipient_type = recipientType; // "all_users" | "drivers" | "customers"
     } else if (activeTab === "individual_user") {
-      payload.recipient_type = "individual";
-      payload.user_id = userId.trim();
+      requestData.recipient_type = "individual";
+      requestData.user_id = userId.trim();
     } else if (activeTab === "individual_driver") {
-      payload.recipient_type = "individual_driver";
-      payload.driver_id = driverId.trim();
+      requestData.recipient_type = "individual";
+      requestData.driver_id = driverId.trim();
     }
 
-    try {
-      await axios.post("/admin/notifications/send", payload);
-      showToast("success", "Notification sent successfully! 🎉");
+    console.log("📨 Sending notification:", requestData); // Debug
 
-      // Clear all form inputs on success
-      setTitle("");
-      setBody("");
-      setAction("");
-      setUserId("");
-      setDriverId("");
+    // API orqali yuborish
+    const response = await api.sendAdminNotification(requestData);
+    
+    showToast(
+      "success",
+      `Notification sent successfully! ${response.sent_count ? `(${response.sent_count} recipients)` : ""} 🎉`
+    );
 
-      // Refresh history to show new notification
-      setOffset(0);
-      await fetchHistory(true);
-    } catch (err: any) {
-      console.error("Send notification error:", err);
-      const message =
-        err?.response?.data?.message || "Failed to send notification";
-      showToast("error", message);
-    } finally {
-      setSending(false);
-    }
-  };
+    // Formani tozalash
+    setTitle("");
+    setBody("");
+    setAction("");
+    setUserId("");
+    setDriverId("");
+
+    // History ni yangilash
+    await fetchHistory(true);
+  } catch (err: any) {
+    console.error("Send notification error:", err);
+    const message = err?.message || "Failed to send notification";
+    showToast("error", message);
+  } finally {
+    setSending(false);
+  }
+};
 
   /**
    * Fetch notification history with pagination and search
    * @param reset - If true, resets history and starts from offset 0
    */
-  const fetchHistory = async (reset = false) => {
-    try {
-      if (reset) {
-        setLoadingHistory(true);
-        setOffset(0);
-      } else {
-        setFetchingMore(true);
-      }
-
-      const currentOffset = reset ? 0 : offset;
-      const params: any = { limit, offset: currentOffset };
-      if (searchQuery.trim()) params.q = searchQuery.trim();
-
-      const res = await api.getAdminNotifications(params);
-      const items: any[] = res.data?.notifications || res.data || [];
-
-      if (reset) {
-        setHistory(items);
-        setHasMore(items.length === limit);
-        setOffset(items.length);
-      } else {
-        setHistory((prev) => [...prev, ...items]);
-        setHasMore(items.length === limit);
-        setOffset((prev) => prev + items.length);
-      }
-    } catch (err) {
-      console.error("Fetch history error:", err);
-      showToast("error", "Could not load notification history");
-    } finally {
-      setLoadingHistory(false);
-      setFetchingMore(false);
+const fetchHistory = async (reset = false) => {
+  try {
+    if (reset) {
+      setLoadingHistory(true);
+      setOffset(0);
+    } else {
+      setFetchingMore(true);
     }
-  };
+
+    const currentOffset = reset ? 0 : offset;
+    const params: any = { 
+      limit, 
+      offset: currentOffset,
+      include_expired: includeExpired 
+    };
+    
+    // Filter by target_type
+    if (filterTargetType !== "all") {
+      params.target_type = filterTargetType;
+    }
+
+    const res = await api.getAdminNotifications(params);
+    
+    const items = res.notifications || [];
+    const totalCount = res.total_count || items.length;
+
+    if (reset) {
+      setHistory(items);
+      setHasMore(items.length === limit);
+      setOffset(items.length);
+    } else {
+      setHistory((prev) => [...prev, ...items]);
+      setHasMore(items.length === limit);
+      setOffset((prev) => prev + items.length);
+    }
+  } catch (err) {
+    console.error("Fetch history error:", err);
+    showToast("error", "Could not load notification history");
+  } finally {
+    setLoadingHistory(false);
+    setFetchingMore(false);
+  }
+};
 
   /**
    * Reset all form fields to initial state
@@ -482,11 +495,11 @@ export default function NotificationsPage() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="text-sm text-gray-600 border-b border-gray-200">
-                          <th className="py-3 px-4">📅 Date/Time</th>
-                          <th className="py-3 px-4">🎯 Recipient</th>
-                          <th className="py-3 px-4">🏷️ Title</th>
-                          <th className="py-3 px-4">💬 Message</th>
-                          <th className="py-3 px-4">⚙️ Action</th>
+                          <th className="py-3 px-4"> Date/Time</th>
+                          <th className="py-3 px-4"> Recipient</th>
+                          <th className="py-3 px-4"> Title</th>
+                          <th className="py-3 px-4"> Message</th>
+                          <th className="py-3 px-4"> Action</th>
                         </tr>
                       </thead>
                       <tbody>

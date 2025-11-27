@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../api"; // API utils ni import qilish
 import Login from "../app/login/Login";
 import { motion, AnimatePresence } from "framer-motion";
+import LanguageSwitcher  from "../components/LanguageSwitcher";
 import { get } from "http";
 
 interface Notification {
@@ -126,7 +127,9 @@ export default function TopBar() {
   };
 
   if (loggedOut) {
-    return <Login />; // sahifa sifatida ko‘rsatish
+    return <Login onLogin={function (userData: AdminData): void {
+      throw new Error("Function not implemented.");
+    } } />; // sahifa sifatida ko‘rsatish
   }
 
   // Qidiruv funksiyasi
@@ -529,6 +532,7 @@ useEffect(() => {
               )}
             </AnimatePresence>
           </div>
+           <LanguageSwitcher />
         </div>
       </div>
 

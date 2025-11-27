@@ -15,6 +15,39 @@ export interface LoginResponse {
   };
 }
 
+export interface PaymentSummary {
+  total_fare: number;
+  total_commission: number;
+  total_payments_count: number;
+  date_from: string;
+  date_to: string;
+}
+
+export interface PaymentHistoryItem {
+  trip_number: string;
+  customer_name: string;
+  customer_id: number;
+  driver_name: string;
+  driver_id: number;
+  total_fare: number;
+  commission_amount: number;
+  payment_method: 'cash' | 'card' | 'wallet' | 'bank_transfer';
+  payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
+  service_type_id: number;
+  service_type_name: string;
+  pickup_region_id: number;
+  pickup_region_name: string;
+  completed_at: string;
+}
+
+export interface PaymentAnalyticsResponse {
+  summary: PaymentSummary;
+  payment_history: PaymentHistoryItem[];
+  date_from: string;
+  date_to: string;
+}
+
+
 export interface CreateRegionRequest {
   name: string;
   city: string;

@@ -782,7 +782,7 @@ const pointToSegmentDistance = (
     <MainContainer>
       <ContentWrapper>
         <Header>
-          <h1>🗺️Interactive Taxi Map</h1>
+          <h1>Interactive Taxi Map</h1>
           <p>Create Taxi zones and validate addresses</p>
         </Header>
 

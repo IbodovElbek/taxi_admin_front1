@@ -1,7 +1,7 @@
 // api.ts - Comprehensive API client for React application
 
 import { AdminDashboard, Driver, DriverResponse, FareConfig, RegionPricingResponse, RegionResponse, RegionsResponse, updatefareresponse } from "./app/types/types";
-import { CreateRegionRequest, LoginRequest, LoginResponse } from "./types";
+import { CreateRegionRequest, LoginRequest, LoginResponse, PaymentAnalyticsResponse } from "./types";
 
 const API_BASE_URL = "https://ibodov.uz/api/taxi/api/v1";
 
@@ -216,6 +216,26 @@ const apiCall = async <T>(
   }
 };
 
+ export async function fetchPaymentAnalytics(
+  period: '7days' | '30days' | 'all' = '30days'
+): Promise<PaymentAnalyticsResponse> {
+  const response = await fetch(`${API_BASE_URL}/payment-analytics?period=${period}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch payment analytics');
+  }
+  return response.json();
+}
+
+export async function exportPaymentAnalytics(
+  period: '7days' | '30days' | 'all' = '30days'
+): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/payment-analytics/export?period=${period}`);
+  if (!response.ok) {
+    throw new Error('Failed to export payment analytics');
+  }
+  return response.blob();
+}
+
 // Review API functions
 export const reviewApi = {
   // Create new review
@@ -304,6 +324,8 @@ export const reviewApi = {
     return apiCall(`/api/v1/reviews/${reviewId}/admin`, "PUT", updateData);
   },
 };
+
+
 
 // Product API functions (if needed)
 export const productApi = {
@@ -588,6 +610,8 @@ async getAllAdminTrips(params?: {
   return [];
 }
 
+ 
+
 // 🔹 Bitta tripni ID bo'yicha olish
 async getTripById(tripId: number): Promise<Trip> {
   return await this.request(`/admin/trips/${tripId}`, { 
@@ -606,32 +630,113 @@ async getAdminRegions(): Promise<RegionsResponse> {
     method: "GET" 
   });
 }
+// ApiClient class ichida
+
 async getAdminNotifications(params?: {
   limit?: number;
   offset?: number;
-  status?: string;
-  search?: string;
-}): Promise<any> {
+  target_type?: "individual" | "group_customers" | "group_drivers" | "all_users";
+  include_expired?: boolean;
+}): Promise<{
+  notifications: Array<{
+    id: number;
+    title: string;
+    body: string;
+    target_type: string;
+    target_user_id?: number;
+    action_url?: string;
+    image_url?: string;
+    priority: string;
+    created_at: string;
+    expires_at?: string;
+    sent_count?: number;
+    user?: {
+      id: number;
+      full_name: string;
+      phone_number: string;
+    };
+  }>;
+  total_count: number;
+}> {
   const queryParams = new URLSearchParams();
-
+  
   if (params?.limit) queryParams.append("limit", params.limit.toString());
   if (params?.offset) queryParams.append("offset", params.offset.toString());
-  if (params?.status) queryParams.append("status", params.status);
-  if (params?.search) queryParams.append("search", params.search);
+  if (params?.target_type) queryParams.append("target_type", params.target_type);
+  if (params?.include_expired !== undefined) {
+    queryParams.append("include_expired", params.include_expired.toString());
+  }
 
   const query = queryParams.toString();
   const endpoint = query ? `/admin/notifications?${query}` : "/admin/notifications";
 
   const response = await this.request<any>(endpoint, { method: "GET" });
-
-  // Turli formatlarni handle qilish
-  if (Array.isArray(response)) return response;
-  if (response?.trips) return response.trips;
-  if (response?.data) return response.data;
   
-  return [];
+  // Response format handle
+  if (Array.isArray(response)) {
+    return { notifications: response, total_count: response.length };
+  }
+  if (response?.notifications) {
+    return response;
+  }
+  
+  return { notifications: [], total_count: 0 };
 }
 
+// api.ts da qo'shing (ApiClient class ichiga)
+
+async sendAdminNotification(data: {
+  title: string;
+  body: string;
+  recipient_type: "all" | "drivers" | "customers" | "individual";
+  user_id?: string;
+  driver_id?: string;
+  action?: string | null;
+  image_url?: string;
+  priority?: "normal" | "high" | "urgent";
+  expires_in_days?: number;
+}): Promise<{
+  message: string;
+  notification_id: number;
+  sent_count?: number;
+}> {
+  // Backend API uchun payload
+  const payload: any = {
+    title: data.title,
+    body: data.body,
+    action_url: data.action || null,
+    image_url: data.image_url || null,
+    priority: data.priority || "normal",
+    expires_in_days: data.expires_in_days || 30,
+  };
+
+  // ✅ BACKEND API STRUKTURA GA MOS QIYMATLAR
+  if (data.recipient_type === "individual") {
+    payload.target_type = "individual";
+    
+    if (data.user_id) {
+      payload.target_user_id = parseInt(data.user_id);
+    } else if (data.driver_id) {
+      payload.target_user_id = parseInt(data.driver_id);
+    }
+  } else {
+    // Bulk notifications - backend qiymatlariga mapping
+    if (data.recipient_type === "all_users" || data.recipient_type === "all") {
+      payload.target_type = "all_users"; // ❌ 'all' emas, 'all_users' bo'lishi kerak
+    } else if (data.recipient_type === "drivers") {
+      payload.target_type = "group_drivers"; // ❌ 'driver' emas, 'group_drivers'
+    } else if (data.recipient_type === "customers") {
+      payload.target_type = "group_customers"; // ❌ 'user' emas, 'group_customers'
+    }
+  }
+
+  console.log("📤 Sending notification payload:", payload);
+
+  return await this.request("/admin/notifications", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
 
 
 
@@ -684,6 +789,22 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
       body: JSON.stringify(data),
     });
   }
+
+ async  fetchPaymentAnalytics(date_from: string, date_to: string): Promise<PaymentAnalyticsResponse> {
+  const response = await fetch(`${API_BASE_URL}/admin/payment-analytics?date_from=${date_from}&date_to=${date_to}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch payment analytics');
+  }
+  return response.json();
+}
+
+ async  exportPaymentAnalytics(date_from: string, date_to: string): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/admin/payment-analytics/export?date_from=${date_from}&date_to=${date_to}`);
+  if (!response.ok) {
+    throw new Error('Failed to export payment analytics');
+  }
+  return response.blob(); 
+}
 
   async adminCreateRegionPricing(
     data: FareConfig
@@ -758,6 +879,10 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
       body: JSON.stringify({ status }),
     });
   }
+
+
+
+
 
   // Haydovchi holatini o'zgartirish (faol/nofaol)
   async toggle_driver_status(
