@@ -695,12 +695,12 @@ class ApiClient {
       }
     } else {
       // Bulk notifications - backend qiymatlariga mapping
-      if (data.recipient_type === "all_users" || data.recipient_type === "all") {
-        payload.target_type = "all_users"; // ❌ 'all' emas, 'all_users' bo'lishi kerak
+      if (data.recipient_type === "all" ) {
+        payload.target_type = "all_users"; 
       } else if (data.recipient_type === "drivers") {
-        payload.target_type = "group_drivers"; // ❌ 'driver' emas, 'group_drivers'
+        payload.target_type = "group_drivers"; 
       } else if (data.recipient_type === "customers") {
-        payload.target_type = "group_customers"; // ❌ 'user' emas, 'group_customers'
+        payload.target_type = "group_customers";
       }
     }
 
