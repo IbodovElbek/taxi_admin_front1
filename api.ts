@@ -82,7 +82,7 @@ export type Trip = {
   trip_number: string;
   trip_type: "point_to_point" | "rental" | "delivery";
   status: "pending" | "in_progress" | "completed" | "cancelled";
-  
+
   // Addresses
   pickup_latitude?: number;
   pickup_longitude?: number;
@@ -90,22 +90,22 @@ export type Trip = {
   destination_latitude?: number;
   destination_longitude?: number;
   destination_address: string;
-  
+
   // Stops
   stops?: any[];
-  
+
   // Distance & Duration
   estimated_distance_km?: number;
   estimated_duration_minutes?: number;
   actual_distance_km?: number;
   actual_duration_minutes?: number;
-  
+
   // Fare & Payment
   estimated_fare?: number;
   total_fare?: number;
   payment_status?: "pending" | "completed" | "failed";
   payment_method?: string;
-  
+
   // Timestamps
   created_at: string;
   accepted_at?: string;
@@ -113,17 +113,17 @@ export type Trip = {
   started_at?: string;
   completed_at?: string;
   cancelled_at?: string;
-  
+
   // Notes
   customer_notes?: string;
   driver_notes?: string;
   cancellation_reason?: string;
-  
+
   // IDs
   customer_id: number;
   driver_id?: number;
   service_type_id: number;
-  
+
   // Relations (backend qaytarsa)
   customer?: {
     id: number;
@@ -211,12 +211,11 @@ const apiCall = async <T>(
 
     return await response.json();
   } catch (error) {
-    console.error("API Error:", error);
     throw error;
   }
 };
 
- export async function fetchPaymentAnalytics(
+export async function fetchPaymentAnalytics(
   period: '7days' | '30days' | 'all' = '30days'
 ): Promise<PaymentAnalyticsResponse> {
   const response = await fetch(`${API_BASE_URL}/payment-analytics?period=${period}`);
@@ -300,7 +299,7 @@ export const reviewApi = {
     return apiCall(`/api/v1/reviews/delete/${reviewId}`, "DELETE");
   },
 
-  
+
 
   // Mark review as helpful
   markReviewHelpful: async (
@@ -447,23 +446,12 @@ class ApiClient {
       ...options,
     };
 
-    console.log("🚀 API Request:", {
-      url,
-      method: config.method,
-      headers: config.headers,
-      isFormData,
-      isNgrokUrl,
-    });
+
 
     try {
       const response = await fetch(url, config);
 
-      console.log("📡 API Response:", {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        url: response.url,
-      });
+
 
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -472,10 +460,10 @@ class ApiClient {
         try {
           const errorData = await response.json();
           errorDetails = errorData;
-          console.error("❌ API Error Data:", errorData);
+          errorDetails = errorData;
 
           // Handle FastAPI validation errors
-          if(errorData.error) {
+          if (errorData.error) {
             errorMessage = errorData.error;
           }
           if (errorData.detail && Array.isArray(errorData.detail)) {
@@ -494,19 +482,13 @@ class ApiClient {
             errorMessage = errorData.message;
           }
         } catch (jsonError) {
-          console.error(
-            "❌ Could not parse error response as JSON:",
-            jsonError
-          );
           // Try to get text content
           try {
             const textContent = await response.text();
-            console.error("Raw error response:", textContent);
             if (textContent) {
               errorMessage += ` - ${textContent}`;
             }
           } catch (textError) {
-            console.error("Could not get text content either:", textError);
           }
         }
 
@@ -515,28 +497,20 @@ class ApiClient {
         throw error;
       }
 
+
+
       const contentType = response.headers.get("content-type");
-      console.log("📄 Content-Type:", contentType);
 
       if (contentType && contentType.includes("application/json")) {
         const data = await response.json();
-        console.log("✅ Parsed JSON Data:", data);
         return data;
       } else {
-        console.warn("⚠️ Response is not JSON, returning empty object");
         return {} as T;
       }
+
     } catch (error) {
-      console.error("💥 API Request Failed:", {
-        error: error instanceof Error ? error.message : error,
-        url,
-        endpoint,
-      });
 
       if (error instanceof TypeError && error.message.includes("fetch")) {
-        console.error(
-          "🌐 Network error detected - possibly CORS or connection issue"
-        );
       }
 
       throw error;
@@ -563,202 +537,202 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify(data),
     });
-    
+
     return response;
   }
-  async create_region(data: CreateRegionRequest):Promise<RegionResponse> {
+  async create_region(data: CreateRegionRequest): Promise<RegionResponse> {
     return await this.request("/admin/regions", {
       method: "POST",
-      body: JSON.stringify(data), 
+      body: JSON.stringify(data),
     });
   }
 
   async createManualTrip(data: CreateManualTripRequest): Promise<{
-  message: string;
-  trip: Trip;
-}> {
-  return await this.request("/admin/trips/create-manual", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
+    message: string;
+    trip: Trip;
+  }> {
+    return await this.request("/admin/trips/create-manual", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
 
-// 🔹 Barcha triplarni olish (yangilangan versiya)
-async getAllAdminTrips(params?: {
-  limit?: number;
-  offset?: number;
-  status?: string;
-  search?: string;
-}): Promise<Trip[]> {
-  const queryParams = new URLSearchParams();
+  // 🔹 Barcha triplarni olish (yangilangan versiya)
+  async getAllAdminTrips(params?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+    search?: string;
+  }): Promise<Trip[]> {
+    const queryParams = new URLSearchParams();
 
-  if (params?.limit) queryParams.append("limit", params.limit.toString());
-  if (params?.offset) queryParams.append("offset", params.offset.toString());
-  if (params?.status) queryParams.append("status", params.status);
-  if (params?.search) queryParams.append("search", params.search);
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.offset) queryParams.append("offset", params.offset.toString());
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.search) queryParams.append("search", params.search);
 
-  const query = queryParams.toString();
-  const endpoint = query ? `/admin/trips?${query}` : "/admin/trips";
+    const query = queryParams.toString();
+    const endpoint = query ? `/admin/trips?${query}` : "/admin/trips";
 
-  const response = await this.request<any>(endpoint, { method: "GET" });
+    const response = await this.request<any>(endpoint, { method: "GET" });
 
-  // Turli formatlarni handle qilish
-  if (Array.isArray(response)) return response;
-  if (response?.trips) return response.trips;
-  if (response?.data) return response.data;
-  
-  return [];
-}
+    // Turli formatlarni handle qilish
+    if (Array.isArray(response)) return response;
+    if (response?.trips) return response.trips;
+    if (response?.data) return response.data;
 
- 
+    return [];
+  }
 
-// 🔹 Bitta tripni ID bo'yicha olish
-async getTripById(tripId: number): Promise<Trip> {
-  return await this.request(`/admin/trips/${tripId}`, { 
-    method: "GET" 
-  });
-}
 
-async getAdminDashboard(): Promise<AdminDashboard> {
-  return await this.request(`/admin/dashboard`, { 
-    method: "GET" 
-  });
-}
 
-async getAdminRegions(): Promise<RegionsResponse> {
-  return await this.request(`/admin/regions`, { 
-    method: "GET" 
-  });
-}
-// ApiClient class ichida
+  // 🔹 Bitta tripni ID bo'yicha olish
+  async getTripById(tripId: number): Promise<Trip> {
+    return await this.request(`/admin/trips/${tripId}`, {
+      method: "GET"
+    });
+  }
 
-async getAdminNotifications(params?: {
-  limit?: number;
-  offset?: number;
-  target_type?: "individual" | "group_customers" | "group_drivers" | "all_users";
-  include_expired?: boolean;
-}): Promise<{
-  notifications: Array<{
-    id: number;
+  async getAdminDashboard(): Promise<AdminDashboard> {
+    return await this.request(`/admin/dashboard`, {
+      method: "GET"
+    });
+  }
+
+  async getAdminRegions(): Promise<RegionsResponse> {
+    return await this.request(`/admin/regions`, {
+      method: "GET"
+    });
+  }
+  // ApiClient class ichida
+
+  async getAdminNotifications(params?: {
+    limit?: number;
+    offset?: number;
+    target_type?: "individual" | "group_customers" | "group_drivers" | "all_users";
+    include_expired?: boolean;
+  }): Promise<{
+    notifications: Array<{
+      id: number;
+      title: string;
+      body: string;
+      target_type: string;
+      target_user_id?: number;
+      action_url?: string;
+      image_url?: string;
+      priority: string;
+      created_at: string;
+      expires_at?: string;
+      sent_count?: number;
+      user?: {
+        id: number;
+        full_name: string;
+        phone_number: string;
+      };
+    }>;
+    total_count: number;
+  }> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.offset) queryParams.append("offset", params.offset.toString());
+    if (params?.target_type) queryParams.append("target_type", params.target_type);
+    if (params?.include_expired !== undefined) {
+      queryParams.append("include_expired", params.include_expired.toString());
+    }
+
+    const query = queryParams.toString();
+    const endpoint = query ? `/admin/notifications?${query}` : "/admin/notifications";
+
+    const response = await this.request<any>(endpoint, { method: "GET" });
+
+    // Response format handle
+    if (Array.isArray(response)) {
+      return { notifications: response, total_count: response.length };
+    }
+    if (response?.notifications) {
+      return response;
+    }
+
+    return { notifications: [], total_count: 0 };
+  }
+
+  // api.ts da qo'shing (ApiClient class ichiga)
+
+  async sendAdminNotification(data: {
     title: string;
     body: string;
-    target_type: string;
-    target_user_id?: number;
-    action_url?: string;
+    recipient_type: "all" | "drivers" | "customers" | "individual";
+    user_id?: string;
+    driver_id?: string;
+    action?: string | null;
     image_url?: string;
-    priority: string;
-    created_at: string;
-    expires_at?: string;
+    priority?: "normal" | "high" | "urgent";
+    expires_in_days?: number;
+  }): Promise<{
+    message: string;
+    notification_id: number;
     sent_count?: number;
-    user?: {
-      id: number;
-      full_name: string;
-      phone_number: string;
+  }> {
+    // Backend API uchun payload
+    const payload: any = {
+      title: data.title,
+      body: data.body,
+      action_url: data.action || null,
+      image_url: data.image_url || null,
+      priority: data.priority || "normal",
+      expires_in_days: data.expires_in_days || 30,
     };
-  }>;
-  total_count: number;
-}> {
-  const queryParams = new URLSearchParams();
-  
-  if (params?.limit) queryParams.append("limit", params.limit.toString());
-  if (params?.offset) queryParams.append("offset", params.offset.toString());
-  if (params?.target_type) queryParams.append("target_type", params.target_type);
-  if (params?.include_expired !== undefined) {
-    queryParams.append("include_expired", params.include_expired.toString());
+
+    // ✅ BACKEND API STRUKTURA GA MOS QIYMATLAR
+    if (data.recipient_type === "individual") {
+      payload.target_type = "individual";
+
+      if (data.user_id) {
+        payload.target_user_id = parseInt(data.user_id);
+      } else if (data.driver_id) {
+        payload.target_user_id = parseInt(data.driver_id);
+      }
+    } else {
+      // Bulk notifications - backend qiymatlariga mapping
+      if (data.recipient_type === "all_users" || data.recipient_type === "all") {
+        payload.target_type = "all_users"; // ❌ 'all' emas, 'all_users' bo'lishi kerak
+      } else if (data.recipient_type === "drivers") {
+        payload.target_type = "group_drivers"; // ❌ 'driver' emas, 'group_drivers'
+      } else if (data.recipient_type === "customers") {
+        payload.target_type = "group_customers"; // ❌ 'user' emas, 'group_customers'
+      }
+    }
+
+
+
+    return await this.request("/admin/notifications", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
-  const query = queryParams.toString();
-  const endpoint = query ? `/admin/notifications?${query}` : "/admin/notifications";
 
-  const response = await this.request<any>(endpoint, { method: "GET" });
-  
-  // Response format handle
-  if (Array.isArray(response)) {
-    return { notifications: response, total_count: response.length };
+
+  // 🔹 Service types ni olish
+  async getServiceTypes(): Promise<ServiceType[]> {
+    const response = await this.request<any>("/admin/service-types", {
+      method: "GET"
+    });
+
+    if (Array.isArray(response)) return response;
+    if (response?.service_types) return response.service_types;
+    if (response?.data) return response.data;
+
+    return [];
   }
-  if (response?.notifications) {
+  async getAdminRegionPricings(region_id: number): Promise<RegionPricingResponse> {
+    const response = await this.request<RegionPricingResponse>(`/admin/region-pricing/${region_id}`, {
+      method: "GET"
+    });
+
     return response;
   }
-  
-  return { notifications: [], total_count: 0 };
-}
-
-// api.ts da qo'shing (ApiClient class ichiga)
-
-async sendAdminNotification(data: {
-  title: string;
-  body: string;
-  recipient_type: "all" | "drivers" | "customers" | "individual";
-  user_id?: string;
-  driver_id?: string;
-  action?: string | null;
-  image_url?: string;
-  priority?: "normal" | "high" | "urgent";
-  expires_in_days?: number;
-}): Promise<{
-  message: string;
-  notification_id: number;
-  sent_count?: number;
-}> {
-  // Backend API uchun payload
-  const payload: any = {
-    title: data.title,
-    body: data.body,
-    action_url: data.action || null,
-    image_url: data.image_url || null,
-    priority: data.priority || "normal",
-    expires_in_days: data.expires_in_days || 30,
-  };
-
-  // ✅ BACKEND API STRUKTURA GA MOS QIYMATLAR
-  if (data.recipient_type === "individual") {
-    payload.target_type = "individual";
-    
-    if (data.user_id) {
-      payload.target_user_id = parseInt(data.user_id);
-    } else if (data.driver_id) {
-      payload.target_user_id = parseInt(data.driver_id);
-    }
-  } else {
-    // Bulk notifications - backend qiymatlariga mapping
-    if (data.recipient_type === "all_users" || data.recipient_type === "all") {
-      payload.target_type = "all_users"; // ❌ 'all' emas, 'all_users' bo'lishi kerak
-    } else if (data.recipient_type === "drivers") {
-      payload.target_type = "group_drivers"; // ❌ 'driver' emas, 'group_drivers'
-    } else if (data.recipient_type === "customers") {
-      payload.target_type = "group_customers"; // ❌ 'user' emas, 'group_customers'
-    }
-  }
-
-  console.log("📤 Sending notification payload:", payload);
-
-  return await this.request("/admin/notifications", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-
-
-// 🔹 Service types ni olish
-async getServiceTypes(): Promise<ServiceType[]> {
-  const response = await this.request<any>("/admin/service-types", { 
-    method: "GET" 
-  });
-  
-  if (Array.isArray(response)) return response;
-  if (response?.service_types) return response.service_types;
-  if (response?.data) return response.data;
-  
-  return [];
-}
-async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
-  const response = await this.request<RegionPricingResponse>(`/admin/region-pricing/${region_id}`, { 
-    method: "GET" 
-  });
-  
-  return response;
-}
 
   async update_driver(
     driver_id: number,
@@ -770,7 +744,7 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
     });
   }
 
-    async update_reion(
+  async update_reion(
     region_id: number,
     data: CreateRegionRequest
   ): Promise<any> {
@@ -790,21 +764,21 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
     });
   }
 
- async  fetchPaymentAnalytics(date_from: string, date_to: string): Promise<PaymentAnalyticsResponse> {
-  const response = await fetch(`${API_BASE_URL}/admin/payment-analytics?date_from=${date_from}&date_to=${date_to}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch payment analytics');
+  async fetchPaymentAnalytics(date_from: string, date_to: string): Promise<PaymentAnalyticsResponse> {
+    const response = await fetch(`${API_BASE_URL}/admin/payment-analytics?date_from=${date_from}&date_to=${date_to}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch payment analytics');
+    }
+    return response.json();
   }
-  return response.json();
-}
 
- async  exportPaymentAnalytics(date_from: string, date_to: string): Promise<Blob> {
-  const response = await fetch(`${API_BASE_URL}/admin/payment-analytics/export?date_from=${date_from}&date_to=${date_to}`);
-  if (!response.ok) {
-    throw new Error('Failed to export payment analytics');
+  async exportPaymentAnalytics(date_from: string, date_to: string): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/admin/payment-analytics/export?date_from=${date_from}&date_to=${date_to}`);
+    if (!response.ok) {
+      throw new Error('Failed to export payment analytics');
+    }
+    return response.blob();
   }
-  return response.blob(); 
-}
 
   async adminCreateRegionPricing(
     data: FareConfig
@@ -822,7 +796,7 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
       body: JSON.stringify(data),
     });
   }
-  
+
 
   // Haydovchi balancedan pul ayirish
   async deductDriverBalance(
@@ -927,7 +901,7 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
       method: "DELETE",
     });
   }
-    async delete_region(region_id: number): Promise<{ message: string }> {
+  async delete_region(region_id: number): Promise<{ message: string }> {
     return await this.request(`/admin/regions/${region_id}`, {
       method: "DELETE",
     });
@@ -1000,12 +974,9 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
   // }
   async testConnection(): Promise<boolean> {
     try {
-      console.log("🧪 Testing API connection...");
       await this.request("/brands?limit=1");
-      console.log("✅ API connection successful");
       return true;
     } catch (error) {
-      console.error("❌ API connection failed:", error);
       return false;
     }
   }
@@ -1023,21 +994,20 @@ async getAdminRegionPricings(region_id:number): Promise<RegionPricingResponse> {
     });
   }
 
-async getRegions(): Promise<Region[]> {
-  const response = await this.request<any>("/admin/regions", { 
-    method: "GET" 
-  });
-  
-  // Agar array qaytsa
-  if (Array.isArray(response)) return response;
-  
-  // Agar object ichida bo'lsa
-  if (response?.regions) return response.regions;
-  if (response?.data) return response.data;
-  
-  console.log('Regions response:', response); // Debug uchun
-  return [];
-}
+  async getRegions(): Promise<Region[]> {
+    const response = await this.request<any>("/admin/regions", {
+      method: "GET"
+    });
+
+    // Agar array qaytsa
+    if (Array.isArray(response)) return response;
+
+    // Agar object ichida bo'lsa
+    if (response?.regions) return response.regions;
+    if (response?.data) return response.data;
+
+    return [];
+  }
 
   async syncCartFromLocal(
     localCartItems: Array<{
@@ -1063,8 +1033,6 @@ async getRegions(): Promise<Region[]> {
       total_amount: number;
     };
   }> {
-    console.log("🔄 Syncing cart from localStorage:", localCartItems);
-
     return this.request("/cart/sync-from-local", {
       method: "POST",
       body: JSON.stringify({
@@ -1090,6 +1058,53 @@ async getRegions(): Promise<Region[]> {
     return this.request(
       `/cart/check-products?product_ids=${productIds.join(",")}`
     );
+  }
+
+  // Analytics
+  async getAnalytics(params?: {
+    start_date?: string;
+    end_date?: string;
+    driver_limit?: number;
+  }): Promise<AnalyticsResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.start_date) queryParams.append("start_date", params.start_date);
+    if (params?.end_date) queryParams.append("end_date", params.end_date);
+    if (params?.driver_limit) queryParams.append("driver_limit", params.driver_limit.toString());
+
+    const query = queryParams.toString();
+    const endpoint = query ? `/admin/analytics?${query}` : "/admin/analytics";
+
+    return await this.request(endpoint, { method: "GET" });
+  }
+
+  async exportAnalytics(params?: {
+    start_date?: string;
+    end_date?: string;
+  }): Promise<Blob> {
+    const queryParams = new URLSearchParams();
+    if (params?.start_date) queryParams.append("start_date", params.start_date);
+    if (params?.end_date) queryParams.append("end_date", params.end_date);
+
+    const query = queryParams.toString();
+    const endpoint = query ? `/admin/analytics/export?${query}` : "/admin/analytics/export";
+
+    // Blob qaytarish uchun maxsus logika kerak, chunki this.request JSON kutadi
+    // Shuning uchun alohida fetch chaqiramiz yoki this.request ni o'zgartiramiz.
+    // Hozircha oddiy fetch bilan qilamiz, chunki auth header kerak.
+
+    const url = `${this.baseURL}${endpoint}`;
+    const config: RequestInit = {
+      method: "GET",
+      headers: {
+        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+      },
+    };
+
+    const response = await fetch(url, config);
+    if (!response.ok) {
+      throw new Error(`Analytics export failed: ${response.statusText}`);
+    }
+    return await response.blob();
   }
 }
 

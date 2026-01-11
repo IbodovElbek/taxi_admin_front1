@@ -25,7 +25,7 @@ export default function UsersPage() {
       setLoading(true);
       setError(null);
       const response = await api.get_all_users();
-      console.log("API Response:", response);
+
 
       let customersArray = [];
       if (Array.isArray(response)) {
@@ -41,14 +41,14 @@ export default function UsersPage() {
       ) {
         customersArray = response.results;
       } else {
-        console.warn("Unexpected API response format:", response);
+
         customersArray = [];
       }
 
-      console.log("✅ Parsed JSON Data:", customersArray);
+
       setCustomers(customersArray);
     } catch (err) {
-      console.error("Foydalanuvchilarni yuklashda xatolik:", err);
+
       setError("Foydalanuvchilarni yuklashda xatolik yuz berdi");
       setCustomers([]);
     } finally {
@@ -109,7 +109,7 @@ export default function UsersPage() {
       if (result.isConfirmed) {
         // API da block customer method mavjud emas, placeholder
         // await api.block_customer(customer.id, isBlocked);
-        
+
         Swal.fire({
           icon: "success",
           title: "Muvaffaqiyatli!",
@@ -120,8 +120,8 @@ export default function UsersPage() {
         await fetchCustomers();
       }
     } catch (error) {
-      console.error("Block customer error:", error);
-      
+
+
       Swal.fire({
         icon: "error",
         title: "Xatolik!",
@@ -273,21 +273,20 @@ export default function UsersPage() {
                       <button
                         key={status}
                         onClick={() => setFilterStatus(status)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 whitespace-nowrap ${
-                          filterStatus === status
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 whitespace-nowrap ${filterStatus === status
                             ? "bg-[#1E2A38] text-white"
                             : "bg-[#F4F6F8] text-gray-600 hover:bg-gray-200"
-                        }`}
+                          }`}
                       >
                         {status === "all"
                           ? "Barchasi"
                           : status === "active"
-                          ? "Faol"
-                          : status === "inactive"
-                          ? "Nofaol"
-                          : status === "blocked"
-                          ? "Bloklangan"
-                          : "Kutilmoqda"}
+                            ? "Faol"
+                            : status === "inactive"
+                              ? "Nofaol"
+                              : status === "blocked"
+                                ? "Bloklangan"
+                                : "Kutilmoqda"}
                       </button>
                     )
                   )}
@@ -380,10 +379,10 @@ export default function UsersPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Til:</span>
                         <span className="font-medium text-gray-800">
-                          {customer.preferred_language === 'uz' ? "O'zbekcha" : 
-                           customer.preferred_language === 'ru' ? "Русский" : 
-                           customer.preferred_language === 'en' ? "English" : 
-                           customer.preferred_language || "O'zbekcha"}
+                          {customer.preferred_language === 'uz' ? "O'zbekcha" :
+                            customer.preferred_language === 'ru' ? "Русский" :
+                              customer.preferred_language === 'en' ? "English" :
+                                customer.preferred_language || "O'zbekcha"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -403,14 +402,13 @@ export default function UsersPage() {
                         <i className="ri-eye-line mr-1"></i>
                         Batafsil
                       </button>
-                      
+
                       <button
                         onClick={() => blockCustomer(customer, customer.user.status !== "blocked")}
-                        className={`flex-1 min-w-[90px] py-2 px-3 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-medium ${
-                          customer.user.status === "blocked"
+                        className={`flex-1 min-w-[90px] py-2 px-3 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-medium ${customer.user.status === "blocked"
                             ? "bg-green-50 text-green-700 hover:bg-green-100"
                             : "bg-red-50 text-red-700 hover:bg-red-100"
-                        }`}
+                          }`}
                       >
                         <i className={`${customer.user.status === "blocked" ? "ri-lock-unlock-line" : "ri-lock-line"} mr-1`}></i>
                         {customer.user.status === "blocked" ? "Blokdan chiqarish" : "Bloklash"}
@@ -502,9 +500,8 @@ export default function UsersPage() {
                     <div>
                       <span className="text-sm text-gray-500">Holati:</span>
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ml-2 ${
-                          getStatusBadge(selectedCustomer.user.status).style
-                        }`}
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ml-2 ${getStatusBadge(selectedCustomer.user.status).style
+                          }`}
                       >
                         {getStatusBadge(selectedCustomer.user.status).label}
                       </span>
@@ -527,10 +524,10 @@ export default function UsersPage() {
                   <div>
                     <span className="text-sm text-gray-500">Afzal qilingan til:</span>
                     <p className="font-medium">
-                      {selectedCustomer.preferred_language === 'uz' ? "O'zbekcha" : 
-                       selectedCustomer.preferred_language === 'ru' ? "Русский" : 
-                       selectedCustomer.preferred_language === 'en' ? "English" : 
-                       selectedCustomer.preferred_language || "O'zbekcha"}
+                      {selectedCustomer.preferred_language === 'uz' ? "O'zbekcha" :
+                        selectedCustomer.preferred_language === 'ru' ? "Русский" :
+                          selectedCustomer.preferred_language === 'en' ? "English" :
+                            selectedCustomer.preferred_language || "O'zbekcha"}
                     </p>
                   </div>
                   <div>

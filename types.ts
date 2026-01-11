@@ -75,3 +75,34 @@ export interface RegionsResponse {
   regions: Region[];
 }
 
+
+export interface MonthlyStat {
+  total_trips: number;
+  total_revenue: number;
+}
+
+export interface MonthlyBreakdown {
+  [key: string]: MonthlyStat;
+}
+
+export interface RegionalStat {
+  id: number;
+  region_name: string;
+  total_trips: number;
+}
+
+export interface DriverStat {
+  driver_id: number;
+  full_name: string;
+  total_earnings: number;
+  total_trips: number;
+  total_commission: number;
+}
+
+export interface AnalyticsResponse {
+  total_completed_trips: number;
+  total_revenue: number;
+  monthly_breakdown: MonthlyBreakdown;
+  regional_stats: RegionalStat[];
+  driver_stats: DriverStat[];
+}

@@ -37,40 +37,40 @@ export default function TripsPage() {
     fetchTrips();
   }, []);
 
- const fetchInitialData = async () => {
-  try {
-    console.log('🔍 Fetching regions and services...');
-    
-    const [regionsData] = await Promise.all([
-      api.getRegions(),
-      
-    ]);
+  const fetchInitialData = async () => {
+    try {
+      console.log('🔍 Fetching regions and services...');
 
-    console.log('✅ Regions received:', regionsData);
+      const [regionsData] = await Promise.all([
+        api.getRegions(),
 
-    const servicesData=[{
-      "id":1,
-      "name":"Economy"
-    },
-  {
-      "id":2,
-      "name":"Buisness"
-    },
-  {
-      "id":3,
-      "name":"Premium"
-    },]
-    setRegions(regionsData || []);
-    setServices(servicesData || []);
-    
-    if (servicesData?.length > 0) {
-      setServiceTypeId(servicesData[0].id.toString());
+      ]);
+
+      console.log('✅ Regions received:', regionsData);
+
+      const servicesData = [{
+        "id": 1,
+        "name": "Economy"
+      },
+      {
+        "id": 2,
+        "name": "Buisness"
+      },
+      {
+        "id": 3,
+        "name": "Premium"
+      },]
+      setRegions(regionsData || []);
+      setServices(servicesData || []);
+
+      if (servicesData?.length > 0) {
+        setServiceTypeId(servicesData[0].id.toString());
+      }
+    } catch (err: any) {
+      console.error('❌ Fetch error:', err);
+      showToast('error', err?.message || 'Failed to load regions or services');
     }
-  } catch (err: any) {
-    console.error('❌ Fetch error:', err);
-    showToast('error', err?.message || 'Failed to load regions or services');
-  }
-};
+  };
 
   const fetchTrips = async () => {
     try {
@@ -103,7 +103,7 @@ export default function TripsPage() {
   // 🔹 Create Manual Trip
   const handleSubmit = async () => {
     if (!canSubmit()) return;
-    
+
     setLoading(true);
     try {
       const payload = {
@@ -117,9 +117,9 @@ export default function TripsPage() {
       };
 
       const response = await api.createManualTrip(payload);
-      
+
       showToast('success', response.message || 'Trip successfully created!');
-      
+
       // Reset form
       setCustomerPhone('');
       setRegionId('');
@@ -141,14 +141,11 @@ export default function TripsPage() {
   };
 
   // 🔹 View Trip Details
-  const handleViewTrip = async (tripId: number) => {
-    try {
-      const tripDetails = await api.getTripById(tripId);
-      setSelectedTrip(tripDetails);
+  const handleViewTrip = (tripId: number) => {
+    const trip = trips.find((t) => t.id === tripId);
+    if (trip) {
+      setSelectedTrip(trip);
       setShowTripDetails(true);
-    } catch (err: any) {
-      console.error('Get trip details error:', err);
-      showToast('error', err?.message || 'Failed to load trip details');
     }
   };
 
@@ -268,7 +265,7 @@ export default function TripsPage() {
                   onChange={(e) => setServiceTypeId(e.target.value)}
                   className="w-full p-3 border border-gray-300 appearance-none rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                   <option value="">Select service Type</option>
+                  <option value="">Select service Type</option>
                   {services.map((service) => (
                     <option key={service.id} value={service.id}>
                       {service.name}
@@ -306,9 +303,8 @@ export default function TripsPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={!canSubmit()}
-                  className={`w-full py-3 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-colors ${
-                    canSubmit() ? 'bg-[#1E2A38] hover:bg-opacity-90' : 'bg-gray-300 cursor-not-allowed'
-                  }`}
+                  className={`w-full py-3 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-colors ${canSubmit() ? 'bg-[#1E2A38] hover:bg-opacity-90' : 'bg-gray-300 cursor-not-allowed'
+                    }`}
                 >
                   {loading && (
                     <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -386,80 +382,164 @@ export default function TripsPage() {
 
         {/* Trip Details Modal */}
         {showTripDetails && selectedTrip && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-[12px] max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-gray-800">Trip Details - #{selectedTrip.id}</h3>
-                <button
-                  onClick={() => setShowTripDetails(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Trip Number</p>
-                    <p className="font-medium">{selectedTrip.trip_number || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedTrip.status)}`}>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in transition-all">
+            <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all scale-100">
+              {/* Modal Header */}
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    Sayohat #{selectedTrip.id}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedTrip.status)}`}>
                       {selectedTrip.status}
                     </span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Customer Phone</p>
-                    <p className="font-medium">{selectedTrip.customer_phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Service Type</p>
-                    <p className="font-medium">{selectedTrip.service_type?.name || '-'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-sm text-gray-500">Pickup Address</p>
-                    <p className="font-medium">{selectedTrip.pickup_address}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-sm text-gray-500">Destination Address</p>
-                    <p className="font-medium">{selectedTrip.destination_address}</p>
-                  </div>
-                  {selectedTrip.admin_notes && (
-                    <div className="col-span-2">
-                      <p className="text-sm text-gray-500">Admin Notes</p>
-                      <p className="font-medium">{selectedTrip.admin_notes}</p>
+                  </h3>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Yaratilgan vaqt: {formatDate(selectedTrip.created_at)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowTripDetails(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                >
+                  <i className="ri-close-line text-2xl text-gray-400 group-hover:text-gray-600"></i>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-8">
+                {/* 1. Asosiy Ma'lumotlar & Route */}
+                <section>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i className="ri-map-pin-range-line text-blue-600"></i>
+                    Yo'nalish Ma'lumotlari
+                  </h4>
+                  <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
+                      {/* Timeline line for visual connection */}
+                      <div className="hidden md:block absolute left-1/2 top-4 bottom-4 w-px bg-gray-300 transform -translate-x-1/2 border-l border-dashed"></div>
+
+                      <div className="relative">
+                        <div className="absolute -left-3 top-1 w-2 h-2 rounded-full bg-green-500 md:hidden"></div>
+                        <p className="text-xs font-bold text-green-600 uppercase tracking-wider mb-1">Olib ketish manzili</p>
+                        <p className="text-gray-800 font-medium text-lg leading-snug">{selectedTrip.pickup_address}</p>
+                        {selectedTrip.pickup_location && (
+                          <p className="text-xs text-gray-400 mt-1 font-mono">{selectedTrip.pickup_location.lat}, {selectedTrip.pickup_location.lng}</p>
+                        )}
+                      </div>
+
+                      <div className="relative">
+                        <div className="absolute -left-3 top-1 w-2 h-2 rounded-full bg-red-500 md:hidden"></div>
+                        <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Borish manzili</p>
+                        <p className="text-gray-800 font-medium text-lg leading-snug">{selectedTrip.destination_address}</p>
+                        {selectedTrip.dropoff_location && (
+                          <p className="text-xs text-gray-400 mt-1 font-mono">{selectedTrip.dropoff_location.lat}, {selectedTrip.dropoff_location.lng}</p>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <div>
-                    <p className="text-sm text-gray-500">Estimated Distance</p>
-                    <p className="font-medium">{selectedTrip.estimated_distance_km ? `${selectedTrip.estimated_distance_km} km` : '-'}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Actual Distance</p>
-                    <p className="font-medium">{selectedTrip.actual_distance_km ? `${selectedTrip.actual_distance_km} km` : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Total Fare</p>
-                    <p className="font-medium">{selectedTrip.total_fare ? `$${selectedTrip.total_fare}` : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Commission</p>
-                    <p className="font-medium">{selectedTrip.commission_amount ? `$${selectedTrip.commission_amount}` : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Created At</p>
-                    <p className="font-medium">{formatDate(selectedTrip.created_at)}</p>
-                  </div>
-                  {selectedTrip.completed_at && (
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 2. Mijoz va Haydovchi */}
+                  <section className="space-y-6">
                     <div>
-                      <p className="text-sm text-gray-500">Completed At</p>
-                      <p className="font-medium">{formatDate(selectedTrip.completed_at)}</p>
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i className="ri-user-line text-purple-600"></i>
+                        Qatnashchilar
+                      </h4>
+                      <div className="grid gap-4">
+                        {/* Customer Card */}
+                        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-start gap-4">
+                          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
+                            <i className="ri-user-smile-line text-purple-600 text-xl"></i>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Mijoz</p>
+                            <p className="font-semibold text-gray-800">{selectedTrip.customer?.full_name || 'Noma\'lum'}</p>
+                            <p className="text-gray-600 text-sm font-mono">{selectedTrip.customer_phone}</p>
+                            {selectedTrip.customer?.rating && (
+                              <div className="flex items-center gap-1 mt-1 text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-md w-fit">
+                                <i className="ri-star-fill"></i> {selectedTrip.customer.rating}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Driver Card */}
+                        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-start gap-4">
+                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                            <i className="ri-steering-2-line text-blue-600 text-xl"></i>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Haydovchi</p>
+                            {selectedTrip.driver ? (
+                              <>
+                                <p className="font-semibold text-gray-800">{selectedTrip.driver.full_name}</p>
+                                <p className="text-gray-600 text-sm font-mono">{selectedTrip.driver.phone_number}</p>
+                                <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded border border-gray-100">
+                                  <p><span className="font-medium text-gray-700">Avto:</span> {selectedTrip.driver.car_model || '-'} ({selectedTrip.driver.car_color || '-'})</p>
+                                  <p><span className="font-medium text-gray-700">Raqam:</span> {selectedTrip.driver.car_number || '-'}</p>
+                                </div>
+                              </>
+                            ) : (
+                              <p className="text-gray-400 italic">Haydovchi biriktirilmagan</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </section>
+
+                  {/* 3. Moliya va Statistika */}
+                  <section>
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <i className="ri-file-list-3-line text-orange-600"></i>
+                      Tafsilotlar
+                    </h4>
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                      <div className="divide-y divide-gray-100">
+                        <div className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                          <span className="text-gray-600 flex items-center gap-2"><i className="ri-service-line text-gray-400"></i> Xizmat turi</span>
+                          <span className="font-medium text-gray-800 bg-gray-100 px-2 py-1 rounded text-sm">{selectedTrip.service_type?.name || '-'}</span>
+                        </div>
+                        <div className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                          <span className="text-gray-600 flex items-center gap-2"><i className="ri-route-line text-gray-400"></i> Masofa (Taxminiy)</span>
+                          <span className="font-medium text-gray-800">{selectedTrip.estimated_distance_km ? `${selectedTrip.estimated_distance_km} km` : '-'}</span>
+                        </div>
+                        <div className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                          <span className="text-gray-600 flex items-center gap-2"><i className="ri-guide-line text-gray-400"></i> Masofa (Haqiqiy)</span>
+                          <span className="font-medium text-gray-800">{selectedTrip.actual_distance_km ? `${selectedTrip.actual_distance_km} km` : '-'}</span>
+                        </div>
+                        <div className="p-4 flex justify-between items-center bg-green-50">
+                          <span className="text-green-800 font-medium flex items-center gap-2"><i className="ri-money-dollar-circle-line"></i> Umumiy Summa</span>
+                          <span className="font-bold text-xl text-green-700">{selectedTrip.total_fare ? `${selectedTrip.total_fare.toLocaleString()} so'm` : '-'}</span>
+                        </div>
+                        <div className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                          <span className="text-gray-600 flex items-center gap-2"><i className="ri-percent-line text-gray-400"></i> Komissiya</span>
+                          <span className="font-medium text-red-600">{selectedTrip.commission_amount ? `-${selectedTrip.commission_amount.toLocaleString()} so'm` : '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedTrip.admin_notes && (
+                      <div className="mt-6">
+                        <h5 className="text-sm font-semibold text-gray-700 mb-2">Admin Izohi:</h5>
+                        <div className="bg-yellow-50 text-yellow-800 p-3 rounded-lg border border-yellow-200 text-sm">
+                          {selectedTrip.admin_notes}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-100 bg-gray-50 sticky bottom-0 rounded-b-2xl">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowTripDetails(false)}
+                    className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all shadow-sm"
+                  >
+                    Yopish
+                  </button>
                 </div>
               </div>
             </div>
@@ -469,9 +549,8 @@ export default function TripsPage() {
         {/* Toast */}
         {toast && (
           <div
-            className={`fixed right-6 top-6 z-50 p-4 rounded-lg shadow-lg ${
-              toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-            }`}
+            className={`fixed right-6 top-6 z-50 p-4 rounded-lg shadow-lg ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <div className="font-medium">{toast.message}</div>
@@ -481,160 +560,160 @@ export default function TripsPage() {
             </div>
           </div>
         )}
-         <footer className="mt-12 lg:mt-16 bg-white rounded-xl shadow-sm border border-gray-100 mx-6">
-        <div className="max-w-7xl mx-auto p-6 lg:p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#FFD100] rounded-lg flex items-center justify-center">
-                  <i className="ri-taxi-fill text-[#1E2A38] text-xl"></i>
+        <footer className="mt-12 lg:mt-16 bg-white rounded-xl shadow-sm border border-gray-100 mx-6">
+          <div className="max-w-7xl mx-auto p-6 lg:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-[#FFD100] rounded-lg flex items-center justify-center">
+                    <i className="ri-taxi-fill text-[#1E2A38] text-xl"></i>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 font-['Pacifico']">
+                    TaxiGo
+                  </h3>
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 font-['Pacifico']">
-                  TaxiGo
-                </h3>
+                <p className="text-gray-600 text-sm">
+                  Professional taxi xizmati boshqaruv tizimi. Har bir sayohatni
+                  oson va xavfsiz boshqaring.
+                </p>
               </div>
-              <p className="text-gray-600 text-sm">
-                Professional taxi xizmati boshqaruv tizimi. Har bir sayohatni
-                oson va xavfsiz boshqaring.
+
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-3">
+                  Tezkor Havolalar
+                </h4>
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      Sayohatlar
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      Haydovchilar
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      Foydalanuvchilar
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      Hisobotlar
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-3">
+                  Qollab-quvvatlash
+                </h4>
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      Yordam markazi
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      API Hujjatlari
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      Texnik qo\'llab-quvvatlash
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="text-gray-600 hover:text-[#1E2A38] transition-colors"
+                    >
+                      Bog\'lanish
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-3">Aloqa</h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <i className="ri-phone-line text-gray-500"></i>
+                    <span className="text-gray-600">+998 71 234-56-78</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <i className="ri-mail-line text-gray-500"></i>
+                    <span className="text-gray-600">admin@taxigo.uz</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <i className="ri-map-pin-line text-gray-500"></i>
+                    <span className="text-gray-600">Toshkent, O\'zbekiston</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 mt-6 lg:mt-8 pt-4 lg:pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-gray-500 text-sm text-center md:text-left">
+                2024 <span className="font-[\'Pacifico\']">TaxiGo</span> Admin
+                Panel. Barcha huquqlar himoyalangan.
               </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-3">
-                Tezkor Havolalar
-              </h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    Sayohatlar
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    Haydovchilar
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    Foydalanuvchilar
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    Hisobotlar
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-3">
-                Qollab-quvvatlash
-              </h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    Yordam markazi
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    API Hujjatlari
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    Texnik qo\'llab-quvvatlash
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-[#1E2A38] transition-colors"
-                  >
-                    Bog\'lanish
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-3">Aloqa</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <i className="ri-phone-line text-gray-500"></i>
-                  <span className="text-gray-600">+998 71 234-56-78</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <i className="ri-mail-line text-gray-500"></i>
-                  <span className="text-gray-600">admin@taxigo.uz</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <i className="ri-map-pin-line text-gray-500"></i>
-                  <span className="text-gray-600">Toshkent, O\'zbekiston</span>
-                </li>
-              </ul>
+              <div className="flex items-center gap-4">
+                <a
+                  href="#"
+                  className="text-gray-500 hover:text-[#1E2A38] transition-colors"
+                >
+                  <i className="ri-facebook-line text-xl"></i>
+                </a>
+                <a
+                  href="#"
+                  className="text-gray-500 hover:text-[#1E2A38] transition-colors"
+                >
+                  <i className="ri-twitter-line text-xl"></i>
+                </a>
+                <a
+                  href="#"
+                  className="text-gray-500 hover:text-[#1E2A38] transition-colors"
+                >
+                  <i className="ri-instagram-line text-xl"></i>
+                </a>
+                <a
+                  href="#"
+                  className="text-gray-500 hover:text-[#1E2A38] transition-colors"
+                >
+                  <i className="ri-telegram-line text-xl"></i>
+                </a>
+              </div>
             </div>
           </div>
-
-          <div className="border-t border-gray-200 mt-6 lg:mt-8 pt-4 lg:pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-sm text-center md:text-left">
-              2024 <span className="font-[\'Pacifico\']">TaxiGo</span> Admin
-              Panel. Barcha huquqlar himoyalangan.
-            </p>
-            <div className="flex items-center gap-4">
-              <a
-                href="#"
-                className="text-gray-500 hover:text-[#1E2A38] transition-colors"
-              >
-                <i className="ri-facebook-line text-xl"></i>
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-[#1E2A38] transition-colors"
-              >
-                <i className="ri-twitter-line text-xl"></i>
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-[#1E2A38] transition-colors"
-              >
-                <i className="ri-instagram-line text-xl"></i>
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-[#1E2A38] transition-colors"
-              >
-                <i className="ri-telegram-line text-xl"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+        </footer>
       </div>
-      
+
     </div>
-    
+
   );
 }

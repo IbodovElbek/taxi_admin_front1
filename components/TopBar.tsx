@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "../api"; // API utils ni import qilish
 import Login from "../app/login/Login";
 import { motion, AnimatePresence } from "framer-motion";
-import LanguageSwitcher  from "../components/LanguageSwitcher";
 import { get } from "http";
+
 
 interface Notification {
   id: number;
@@ -40,6 +40,7 @@ export default function TopBar() {
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
 
   // User ma'lumotlarini olish
 
@@ -113,18 +114,22 @@ export default function TopBar() {
     }
   };
 
-  const handleLogout = async () => {
-    // logout jarayoni
-    try {
-      console.log("🚪 Logout jarayoni...");
-      localStorage.clear();
-      sessionStorage.clear();
+const handleLogout = async () => {
+  try {
+    console.log("🚪 Logout jarayoni...");
+    localStorage.clear();
+    sessionStorage.clear();
 
-      setLoggedOut(true); // Login page ko‘rsatish
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    setLoggedOut(true);
+
+   window.location.replace("/");
+
+    // masalan: "/login", "/home", "/auth"
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 
   if (loggedOut) {
     return <Login onLogin={function (userData: AdminData): void {
@@ -532,7 +537,6 @@ useEffect(() => {
               )}
             </AnimatePresence>
           </div>
-           <LanguageSwitcher />
         </div>
       </div>
 

@@ -1,23 +1,10 @@
-const nextConfig = {
-  basePath: '/taxi',
-  assetPrefix: '/taxi/',
-  typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
-  trailingSlash: true,
-  // Bu juda muhim!
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Forwarded-Proto',
-            value: 'https',
-          },
-        ],
-      },
-    ];
+import type { NextConfig } from "next";
+import path from "path";
+
+const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
