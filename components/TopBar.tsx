@@ -48,8 +48,20 @@ export default function TopBar() {
   const loadNotifications = async () => {
     setNotificationsLoading(true);
     try {
-      if (response && response.data) {
-        setNotifications(response.data);
+      const response = await api.getAdminNotifications();
+      if (response && response.notifications) {
+        // Map backend notifications to UI format
+        const mapped: Notification[] = response.notifications.map((n: any) => ({
+          id: n.id,
+          text: n.body,
+          title: n.title,
+          time: new Date(n.created_at).toLocaleString(),
+          type: "info",
+          read: n.is_read || false
+        }));
+        setNotifications(mapped);
+      } else {
+        throw new Error('No notifications found');
       }
     } catch (error) {
       console.error("Bildirishnomalar yuklashda xato:", error);
@@ -114,27 +126,27 @@ export default function TopBar() {
     }
   };
 
-const handleLogout = async () => {
-  try {
-    console.log("🚪 Logout jarayoni...");
-    localStorage.clear();
-    sessionStorage.clear();
+  const handleLogout = async () => {
+    try {
+      console.log("🚪 Logout jarayoni...");
+      localStorage.clear();
+      sessionStorage.clear();
 
-    setLoggedOut(true);
+      setLoggedOut(true);
 
-   window.location.replace("/");
+      window.location.replace("/");
 
-    // masalan: "/login", "/home", "/auth"
-  } catch (error) {
-    console.error(error);
-  }
-};
+      // masalan: "/login", "/home", "/auth"
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
 
   if (loggedOut) {
-    return <Login onLogin={function (userData: AdminData): void {
+    return <Login onLogin={function (userData: any): void {
       throw new Error("Function not implemented.");
-    } } />; // sahifa sifatida ko‘rsatish
+    }} />; // sahifa sifatida ko‘rsatish
   }
 
   // Qidiruv funksiyasi
@@ -162,22 +174,22 @@ const handleLogout = async () => {
   };
 
   // User ma'lumotlarini olish
-useEffect(() => {
-  try {
-    const stored = localStorage.getItem("taxigo_user");
-    if (stored) {
-      const parsed = JSON.parse(stored);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("taxigo_user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
 
-      setUser({
-        email: parsed.email || "",
-        role: parsed.role || "admin",       // Agar role yo'q bo'lsa default admin
-        fullName: parsed.name || "Admin",
-      });
+        setUser({
+          email: parsed.email || "",
+          role: parsed.role || "admin",       // Agar role yo'q bo'lsa default admin
+          fullName: parsed.name || "Admin",
+        });
+      }
+    } catch (err) {
+      console.error("User local storage parse error:", err);
     }
-  } catch (err) {
-    console.error("User local storage parse error:", err);
-  }
-}, []);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -346,23 +358,21 @@ useEffect(() => {
                       <div
                         key={notification.id}
                         onClick={() => markAsRead(notification.id)}
-                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-b-0 transition-colors ${
-                          !notification.read
+                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-b-0 transition-colors ${!notification.read
                             ? "bg-blue-50 border-l-4 border-l-blue-500"
                             : ""
-                        }`}
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <div
-                            className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                              notification.type === "warning"
+                            className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${notification.type === "warning"
                                 ? "bg-yellow-500"
                                 : notification.type === "error"
-                                ? "bg-red-500"
-                                : notification.type === "info"
-                                ? "bg-blue-500"
-                                : "bg-green-500"
-                            }`}
+                                  ? "bg-red-500"
+                                  : notification.type === "info"
+                                    ? "bg-blue-500"
+                                    : "bg-green-500"
+                              }`}
                           ></div>
                           <div className="flex-1 min-w-0">
                             {notification.title && (
@@ -416,7 +426,7 @@ useEffect(() => {
               />
               <div className="text-left hidden sm:block">
                 <p className="text-sm font-semibold text-#1B2430 truncate max-w-32">
-                 {getUserDisplayName(user)}
+                  {getUserDisplayName(user)}
                 </p>
                 <p className="text-xs text-gray-400">
                   {user?.role ? getRoleDisplay(user.role) : "Administrator"}
@@ -424,9 +434,8 @@ useEffect(() => {
               </div>
               <div className="w-4 h-4 flex items-center justify-center">
                 <i
-                  className={`ri-arrow-down-s-line text-gray-400 transition-transform duration-200 ${
-                    showProfile ? "rotate-180" : ""
-                  }`}
+                  className={`ri-arrow-down-s-line text-gray-400 transition-transform duration-200 ${showProfile ? "rotate-180" : ""
+                    }`}
                 ></i>
               </div>
             </button>
@@ -450,10 +459,10 @@ useEffect(() => {
                     />
                     <div className="truncate">
                       <p className="text-sm font-semibold text-white">
-                       {getUserDisplayName(user)}
+                        {getUserDisplayName(user)}
                       </p>
                       <p className="text-xs text-gray-400 truncate">
-                        {getUserInitials(user)}@example.com 
+                        {getUserInitials(user)}@example.com
                       </p>
                       <p className="text-xs text-green-400 font-medium">
                         {user?.role

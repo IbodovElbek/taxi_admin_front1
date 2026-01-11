@@ -701,11 +701,11 @@ const GeocodeMapComponent = () => {
       prev.map((poly) =>
         poly.id === selectedPolygonId
           ? {
-              ...poly,
-              boundary_coordinates: poly.boundary_coordinates.map((coord, i) =>
-                i === index ? newCoords : coord
-              ),
-            }
+            ...poly,
+            boundary_coordinates: poly.boundary_coordinates.map((coord, i) =>
+              i === index ? newCoords : coord
+            ),
+          }
           : poly
       )
     );
@@ -721,7 +721,7 @@ const GeocodeMapComponent = () => {
       const p1 = selectedPolygon.boundary_coordinates[i];
       const p2 =
         selectedPolygon.boundary_coordinates[
-          (i + 1) % selectedPolygon.boundary_coordinates.length
+        (i + 1) % selectedPolygon.boundary_coordinates.length
         ];
       const distance = pointToSegmentDistance(clickCoords, p1, p2);
 
@@ -736,13 +736,13 @@ const GeocodeMapComponent = () => {
         prev.map((poly) =>
           poly.id === selectedPolygonId
             ? {
-                ...poly,
-                boundary_coordinates: [
-                  ...poly.boundary_coordinates.slice(0, insertIndex),
-                  clickCoords,
-                  ...poly.boundary_coordinates.slice(insertIndex),
-                ],
-              }
+              ...poly,
+              boundary_coordinates: [
+                ...poly.boundary_coordinates.slice(0, insertIndex),
+                clickCoords,
+                ...poly.boundary_coordinates.slice(insertIndex),
+              ],
+            }
             : poly
         )
       );
@@ -932,7 +932,7 @@ const GeocodeMapComponent = () => {
 
                 <StyledSelect
                   placeholder="Выберите полигон"
-                  onChange={(id) => setSelectedPolygonId(id)}
+                  onChange={(id) => setSelectedPolygonId(id as number | null)}
                   options={polygons.map((poly) => ({
                     value: poly.id,
                     label: poly.name,
@@ -948,7 +948,7 @@ const GeocodeMapComponent = () => {
                   <div className="section-title">
                     📋 Created zones ({polygons.length})
                   </div>
-                 
+
                   {/* <YMaps>
                   <Map
                     defaultState={{

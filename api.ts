@@ -1,7 +1,7 @@
 // api.ts - Comprehensive API client for React application
 
-import { AdminDashboard, Driver, DriverResponse, FareConfig, RegionPricingResponse, RegionResponse, RegionsResponse, updatefareresponse } from "./app/types/types";
-import { CreateRegionRequest, LoginRequest, LoginResponse, PaymentAnalyticsResponse } from "./types";
+import { AdminDashboard, Driver, DriverResponse, FareConfig, RegionPricingResponse, RegionResponse, Regions, RegionsResponse, updatefareresponse } from "./app/types/types";
+import { AnalyticsResponse, CreateRegionRequest, LoginRequest, LoginResponse, PaymentAnalyticsResponse } from "./types";
 
 const API_BASE_URL = "https://ibodov.uz/api/taxi/api/v1";
 
@@ -73,7 +73,7 @@ export type UpdateDriverRequest = {
   car_year?: number;
   commission_rate?: number;
   status?: string;
-  documents_verified: boolean,
+  documents_verified?: boolean;
   is_verified?: boolean;
 };
 
@@ -599,7 +599,7 @@ class ApiClient {
     });
   }
 
-  async getAdminRegions(): Promise<RegionsResponse> {
+  async getAdminRegions(): Promise<{ regions: Regions[] }> {
     return await this.request(`/admin/regions`, {
       method: "GET"
     });
@@ -695,10 +695,10 @@ class ApiClient {
       }
     } else {
       // Bulk notifications - backend qiymatlariga mapping
-      if (data.recipient_type === "all" ) {
-        payload.target_type = "all_users"; 
+      if (data.recipient_type === "all") {
+        payload.target_type = "all_users";
       } else if (data.recipient_type === "drivers") {
-        payload.target_type = "group_drivers"; 
+        payload.target_type = "group_drivers";
       } else if (data.recipient_type === "customers") {
         payload.target_type = "group_customers";
       }
@@ -930,8 +930,20 @@ class ApiClient {
   async get_all_drivers(): Promise<DriverResponse> {
     return await this.request("/admin/drivers", { method: "GET" });
   }
-  async get_all_users(): Promise<Customer[]> {
+  async get_all_users(): Promise<{ customers: Customer[] }> {
     return await this.request("/admin/customers", { method: "GET" });
+  }
+
+  async markNotificationAsRead(id: number): Promise<void> {
+    // Placeholder as API endpoint is uncertain, but needed for build
+    // return await this.request(`/admin/notifications/${id}/read`, { method: "POST" });
+    console.log(`Marking notification ${id} as read`);
+  }
+
+  async markAllNotificationsAsRead(): Promise<void> {
+    // Placeholder as API endpoint is uncertain, but needed for build
+    // return await this.request(`/admin/notifications/read-all`, { method: "POST" });
+    console.log("Marking all notifications as read");
   }
 
   // async register(data: RegisterRequest): Promise<User> {
@@ -1065,7 +1077,7 @@ class ApiClient {
     start_date?: string;
     end_date?: string;
     driver_limit?: number;
-  }): Promise<PaymentAnalyticsResponse> {
+  }): Promise<AnalyticsResponse> {
     const queryParams = new URLSearchParams();
     if (params?.start_date) queryParams.append("start_date", params.start_date);
     if (params?.end_date) queryParams.append("end_date", params.end_date);

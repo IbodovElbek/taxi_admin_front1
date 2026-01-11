@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { api, Trip } from '../api';
 import Swal from 'sweetalert2';
-import { 
-  RefreshCw, 
-  Car, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  RefreshCw,
+  Car,
+  CheckCircle,
+  XCircle,
+  Clock,
   AlertTriangle,
   User,
   Phone,
@@ -49,22 +49,22 @@ export default function RecentActivity() {
       setLoading(true);
       setError(null);
       const response = await api.getRecentTrips(20); // Load more data for pagination
-      
+
       let tripsData: Trip[] = [];
-      
+
       if (Array.isArray(response)) {
         tripsData = response;
-      } else if (response && response.trips && Array.isArray(response.trips)) {
-        tripsData = response.trips;
-      } else if (response && response.data && Array.isArray(response.data)) {
-        tripsData = response.data;
-      } else if (response && Array.isArray(response.results)) {
-        tripsData = response.results;
+      } else if (response && 'trips' in response && Array.isArray((response as any).trips)) {
+        tripsData = (response as any).trips;
+      } else if (response && 'data' in response && Array.isArray((response as any).data)) {
+        tripsData = (response as any).data;
+      } else if (response && 'results' in response && Array.isArray((response as any).results)) {
+        tripsData = (response as any).results;
       } else {
         console.error('Unexpected API response format:', response);
         throw new Error('Ma\'lumotlar noto\'g\'ri formatda keldi');
       }
-      
+
       setTrips(tripsData);
       setPagination(prev => ({
         ...prev,
@@ -87,7 +87,7 @@ export default function RecentActivity() {
 
   const getTripIcon = (status: Trip['status'], tripType: Trip['trip_type']) => {
     const iconClass = "w-5 h-5";
-    
+
     if (status === 'completed') return <CheckCircle className={`${iconClass} text-green-600`} />;
     if (status === 'cancelled') return <XCircle className={`${iconClass} text-red-600`} />;
     if (status === 'in_progress') return <Car className={`${iconClass} text-blue-600`} />;
@@ -164,24 +164,24 @@ export default function RecentActivity() {
     if (diffInMinutes < 60) return `${diffInMinutes} daq oldin`;
     if (diffInHours < 24) return `${diffInHours} soat oldin`;
     if (diffInDays < 7) return `${diffInDays} kun oldin`;
-    
-    return date.toLocaleDateString('uz-UZ', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
+
+    return date.toLocaleDateString('uz-UZ', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
   };
 
- const showTripDetails = async (trip: Trip) => {
-  try {
-    const fullTripData = await api.getTripById(trip.id);
-    
-    // Ma'lumotlarni tekshirish va default qiymatlar berish
-    const customer = fullTripData.customer || { name: 'Noma\'lum', phone: 'Noma\'lum' };
-    const driver = fullTripData.driver || { name: 'Tayinlanmagan', phone: 'Noma\'lum', car_number: 'Noma\'lum' };
-    
-    const statusActions = trip.status === 'pending' || trip.status === 'in_progress' 
-      ? `
+  const showTripDetails = async (trip: Trip) => {
+    try {
+      const fullTripData = await api.getTripById(trip.id);
+
+      // Ma'lumotlarni tekshirish va default qiymatlar berish
+      const customer = fullTripData.customer || { name: 'Noma\'lum', phone: 'Noma\'lum' };
+      const driver = fullTripData.driver || { name: 'Tayinlanmagan', phone: 'Noma\'lum', car_number: 'Noma\'lum' };
+
+      const statusActions = trip.status === 'pending' || trip.status === 'in_progress'
+        ? `
         <div class="flex gap-3 justify-center mt-6 pt-4 border-t">
           <button id="completeTrip" class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -198,14 +198,14 @@ export default function RecentActivity() {
         </div>
       ` : '';
 
-    await Swal.fire({
-      title: `<div class="flex items-center gap-3 text-gray-800">
+      await Swal.fire({
+        title: `<div class="flex items-center gap-3 text-gray-800">
         <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path>
         </svg>
         Safari #${trip.trip_number}
       </div>`,
-      html: `
+        html: `
         <div class="text-left space-y-6 max-h-96 overflow-y-auto custom-scrollbar">
           <!-- Customer & Driver Info -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -286,18 +286,18 @@ export default function RecentActivity() {
           }
         </style>
       `,
-      // qolgan kodlar...
-    });
-  } catch (error) {
-    console.error('Trip details error:', error); // Debug uchun
-    Swal.fire({
-      icon: 'error',
-      title: 'Xatolik!',
-      text: 'Safari ma\'lumotlarini yuklashda xatolik yuz berdi!',
-      confirmButtonText: 'Yaxshi'
-    });
-  }
-};
+        // qolgan kodlar...
+      });
+    } catch (error) {
+      console.error('Trip details error:', error); // Debug uchun
+      Swal.fire({
+        icon: 'error',
+        title: 'Xatolik!',
+        text: 'Safari ma\'lumotlarini yuklashda xatolik yuz berdi!',
+        confirmButtonText: 'Yaxshi'
+      });
+    }
+  };
 
   // Pagination logic
   const getCurrentPageData = () => {
@@ -346,7 +346,7 @@ export default function RecentActivity() {
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-bold text-gray-800">So'nggi Faoliyat</h3>
-        <button 
+        <button
           onClick={refreshData}
           disabled={refreshing}
           className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 disabled:opacity-50"
@@ -361,7 +361,7 @@ export default function RecentActivity() {
         </div>
         <h4 className="text-lg font-semibold text-gray-900 mb-2">Xatolik yuz berdi</h4>
         <p className="text-gray-600 mb-6 max-w-md mx-auto">{error}</p>
-        <button 
+        <button
           onClick={refreshData}
           disabled={refreshing}
           className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
@@ -387,7 +387,7 @@ export default function RecentActivity() {
               <p className="text-sm text-gray-600">{trips.length} ta safari mavjud</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={refreshData}
             disabled={refreshing}
             className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-gray-100 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -414,8 +414,8 @@ export default function RecentActivity() {
           <>
             <div className="space-y-3">
               {currentPageData.map((trip, index) => (
-                <div 
-                  key={trip.id} 
+                <div
+                  key={trip.id}
                   className="group relative bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 cursor-pointer transition-all duration-300 border border-gray-200 hover:border-blue-300 hover:shadow-lg transform hover:scale-[1.02]"
                   onClick={() => showTripDetails(trip)}
                 >
@@ -424,7 +424,7 @@ export default function RecentActivity() {
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border-2 ${getStatusColor(trip.status)} shadow-sm group-hover:shadow-md transition-all duration-300`}>
                       {getTripIcon(trip.status, trip.trip_type)}
                     </div>
-                    
+
                     {/* Main Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
@@ -435,15 +435,15 @@ export default function RecentActivity() {
                           {getStatusText(trip.status)}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                         <User className="w-4 h-4 flex-shrink-0" />
-                        <span className="font-medium">{trip.customer.name}</span>
+                        <span className="font-medium">{trip.customer?.name || "Noma'lum"}</span>
                         <span className="text-gray-400">→</span>
                         <MapPin className="w-4 h-4 flex-shrink-0 text-red-500" />
-                      
+
                       </div>
-                      
+
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
@@ -459,7 +459,7 @@ export default function RecentActivity() {
                         </div> */}
                       </div>
                     </div>
-                    
+
                     {/* Price & Actions */}
                     <div className="text-right flex-shrink-0 space-y-2">
                       {trip.total_fare && (
@@ -470,27 +470,27 @@ export default function RecentActivity() {
                           <p className="text-xs text-gray-500 font-medium">so'm</p>
                         </div>
                       )}
-                      
+
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Eye className="w-4 h-4 text-blue-500" />
                         <span className="text-xs text-blue-600 font-medium">Batafsil</span>
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Hover Effect Gradient */}
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-indigo-600/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                 </div>
               ))}
             </div>
-            
+
             {/* Pagination */}
             {trips.length > pagination.itemsPerPage && (
               <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
                 <div className="text-sm text-gray-600">
                   {pagination.itemsPerPage * (pagination.currentPage - 1) + 1}-{Math.min(pagination.itemsPerPage * pagination.currentPage, pagination.totalItems)} / {pagination.totalItems} ta safari
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handlePageChange(pagination.currentPage - 1)}
@@ -499,21 +499,20 @@ export default function RecentActivity() {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  
+
                   {[...Array(totalPages)].map((_, i) => (
                     <button
                       key={i}
                       onClick={() => handlePageChange(i + 1)}
-                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                        pagination.currentPage === i + 1
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${pagination.currentPage === i + 1
                           ? 'bg-gray-200  text-white shadow-sm'
                           : 'hover:bg-gray-100 text-gray-700'
-                      }`}
+                        }`}
                     >
                       {i + 1}
                     </button>
                   ))}
-                  
+
                   <button
                     onClick={() => handlePageChange(pagination.currentPage + 1)}
                     disabled={pagination.currentPage === totalPages}

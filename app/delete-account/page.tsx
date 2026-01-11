@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { AlertCircle, Loader, CheckCircle } from 'lucide-react';
 import { LoginRequest } from '@/types';
-import  { api } from '../../api'
+import { api } from '../../api'
 export default function DeleteAccountPage() {
   const [formData, setFormData] = useState({
     phone_number: '',
@@ -13,7 +13,7 @@ export default function DeleteAccountPage() {
   const [success, setSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -22,9 +22,9 @@ export default function DeleteAccountPage() {
     setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
     if (!formData.phone_number || !formData.password) {
       setError('Barcha maydonlarni to\'ldiring');
       return;
@@ -34,14 +34,14 @@ export default function DeleteAccountPage() {
     setError('');
 
     try {
-      const dataform : LoginRequest = {
+      const dataform: LoginRequest = {
         phone_number: formData.phone_number,
         password: formData.password
       };
       const response = await api.delete_account(dataform)
 
-      if (!response.ok) {
-        setError(data.detail || 'Xato yuz berdi');
+      if (!(response as any).user) {
+        setError((response as any).detail || 'Xato yuz berdi');
         setLoading(false);
         return;
       }
@@ -49,7 +49,7 @@ export default function DeleteAccountPage() {
       setSuccess(true);
       setFormData({ phone_number: '', password: '' });
       setShowConfirm(false);
-      
+
       setTimeout(() => {
         window.location.href = '/login';
       }, 3000);
@@ -146,7 +146,7 @@ export default function DeleteAccountPage() {
               </button>
 
               <button
-                onClick={handleSubmit}
+                onClick={() => handleSubmit()}
                 disabled={loading}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >

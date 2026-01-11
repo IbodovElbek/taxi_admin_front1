@@ -39,47 +39,47 @@ export default function SettingsPage() {
     allowWalletPayment: true
   });
 
-  const handleAddArea = (e) => {
+  const handleAddArea = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const newArea = {
       id: areaSettings.length + 1,
-      name: formData.get('areaName'),
-      baseFare: parseInt(formData.get('baseFare')),
-      perKmRate: parseInt(formData.get('perKmRate')),
-      color: formData.get('color') || '#1E2A38'
+      name: (formData.get('areaName') as string) || '',
+      baseFare: parseInt(formData.get('baseFare') as string) || 0,
+      perKmRate: parseInt(formData.get('perKmRate') as string) || 0,
+      color: (formData.get('color') as string) || '#1E2A38'
     };
     setAreaSettings((prev) => [...prev, newArea]);
     setShowAddArea(false);
     alert(`${newArea.name} hududi qo'shildi!`);
   };
 
-  const handlePricingUpdate = (e) => {
+  const handlePricingUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const updatedPricing = {
-      baseFare: parseInt(formData.get('baseFare')),
-      perKmRate: parseInt(formData.get('perKmRate')),
-      perMinuteRate: parseInt(formData.get('perMinuteRate')),
-      minimumFare: parseInt(formData.get('minimumFare')),
-      commissionRate: parseInt(formData.get('commissionRate')),
-      surgeMultiplier: parseFloat(formData.get('surgeMultiplier')),
-      cancellationFee: parseInt(formData.get('cancellationFee'))
+      baseFare: parseInt(formData.get('baseFare') as string) || 0,
+      perKmRate: parseInt(formData.get('perKmRate') as string) || 0,
+      perMinuteRate: parseInt(formData.get('perMinuteRate') as string) || 0,
+      minimumFare: parseInt(formData.get('minimumFare') as string) || 0,
+      commissionRate: parseInt(formData.get('commissionRate') as string) || 0,
+      surgeMultiplier: parseFloat(formData.get('surgeMultiplier') as string) || 1.0,
+      cancellationFee: parseInt(formData.get('cancellationFee') as string) || 0
     };
     setPricingSettings(updatedPricing);
     alert('Narx sozlamalari saqlandi!');
   };
 
-  const handleGeneralUpdate = (e) => {
+  const handleGeneralUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const updatedGeneral = {
-      companyName: formData.get('companyName'),
-      supportEmail: formData.get('supportEmail'),
-      supportPhone: formData.get('supportPhone'),
-      workingHours: formData.get('workingHours'),
-      maxWaitTime: parseInt(formData.get('maxWaitTime')),
-      autoAcceptTime: parseInt(formData.get('autoAcceptTime')),
+      companyName: (formData.get('companyName') as string) || '',
+      supportEmail: (formData.get('supportEmail') as string) || '',
+      supportPhone: (formData.get('supportPhone') as string) || '',
+      workingHours: (formData.get('workingHours') as string) || '',
+      maxWaitTime: parseInt(formData.get('maxWaitTime') as string) || 0,
+      autoAcceptTime: parseInt(formData.get('autoAcceptTime') as string) || 0,
       allowCashPayment: formData.get('allowCashPayment') === 'on',
       allowCardPayment: formData.get('allowCardPayment') === 'on',
       allowWalletPayment: formData.get('allowWalletPayment') === 'on'
@@ -106,51 +106,46 @@ export default function SettingsPage() {
               <div className="flex border-b border-gray-200 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('pricing')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${
-                    activeTab === 'pricing'
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${activeTab === 'pricing'
                       ? 'border-[#1E2A38] text-[#1E2A38]'
                       : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                 >
                   Narx Sozlamalari
                 </button>
                 <button
                   onClick={() => setActiveTab('areas')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${
-                    activeTab === 'areas'
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${activeTab === 'areas'
                       ? 'border-[#1E2A38] text-[#1E2A38]'
                       : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                 >
                   Hududiy Narxlar
                 </button>
                 <button
                   onClick={() => setActiveTab('general')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${
-                    activeTab === 'general'
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${activeTab === 'general'
                       ? 'border-[#1E2A38] text-[#1E2A38]'
                       : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                 >
                   Umumiy Sozlamalar
                 </button>
                 <button
                   onClick={() => setActiveTab('notifications')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${
-                    activeTab === 'notifications'
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${activeTab === 'notifications'
                       ? 'border-[#1E2A38] text-[#1E2A38]'
                       : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                 >
                   Bildirishnoma Sozlamalari
                 </button>
                 <button
                   onClick={() => setActiveTab('backup')}
-                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${
-                    activeTab === 'backup'
+                  className={`px-6 py-4 font-medium text-sm transition-all duration-200 whitespace-nowrap border-b-2 ${activeTab === 'backup'
                       ? 'border-[#1E2A38] text-[#1E2A38]'
                       : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                 >
                   Zaxira Nusxa
                 </button>

@@ -27,21 +27,16 @@ export default function UsersPage() {
       const response = await api.get_all_users();
 
 
-      let customersArray = [];
+      let customersArray: any[] = [];
       if (Array.isArray(response)) {
         customersArray = response;
-      } else if (response && Array.isArray(response.data)) {
-        customersArray = response.data;
-      } else if (response && Array.isArray(response.customers)) {
-        customersArray = response.customers;
-      } else if (
-        response &&
-        response.results &&
-        Array.isArray(response.results)
-      ) {
-        customersArray = response.results;
+      } else if (response && 'data' in response && Array.isArray((response as any).data)) {
+        customersArray = (response as any).data;
+      } else if (response && 'customers' in response && Array.isArray((response as any).customers)) {
+        customersArray = (response as any).customers;
+      } else if (response && 'results' in response && Array.isArray((response as any).results)) {
+        customersArray = (response as any).results;
       } else {
-
         customersArray = [];
       }
 
@@ -274,8 +269,8 @@ export default function UsersPage() {
                         key={status}
                         onClick={() => setFilterStatus(status)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 whitespace-nowrap ${filterStatus === status
-                            ? "bg-[#1E2A38] text-white"
-                            : "bg-[#F4F6F8] text-gray-600 hover:bg-gray-200"
+                          ? "bg-[#1E2A38] text-white"
+                          : "bg-[#F4F6F8] text-gray-600 hover:bg-gray-200"
                           }`}
                       >
                         {status === "all"
@@ -406,8 +401,8 @@ export default function UsersPage() {
                       <button
                         onClick={() => blockCustomer(customer, customer.user.status !== "blocked")}
                         className={`flex-1 min-w-[90px] py-2 px-3 rounded-lg transition-all duration-200 transform hover:scale-105 text-sm font-medium ${customer.user.status === "blocked"
-                            ? "bg-green-50 text-green-700 hover:bg-green-100"
-                            : "bg-red-50 text-red-700 hover:bg-red-100"
+                          ? "bg-green-50 text-green-700 hover:bg-green-100"
+                          : "bg-red-50 text-red-700 hover:bg-red-100"
                           }`}
                       >
                         <i className={`${customer.user.status === "blocked" ? "ri-lock-unlock-line" : "ri-lock-line"} mr-1`}></i>

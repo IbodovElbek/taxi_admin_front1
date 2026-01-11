@@ -5,7 +5,12 @@ export interface LoginRequest {
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;
-  user: {
+  token_type: string;
+  role: string;
+  user_id: number;
+  expires_in: number;
+  refresh_expires_in: number;
+  user?: {
     id: number;
     full_name: string;
     email: string;
