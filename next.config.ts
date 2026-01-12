@@ -1,10 +1,8 @@
-import type { NextConfig } from "next";
-import path from "path";
-
-const nextConfig: NextConfig = {
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  basePath: '/taxi',
+  assetPrefix: '/taxi',
 };
 
 export default nextConfig;
